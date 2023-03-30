@@ -53,6 +53,9 @@ class DigitalTyphoonSequence:
     def get_start_year(self) -> int:
         return self.year
 
+    def get_num_frames(self) -> int:
+        return self.num_frames
+
     def num_image_paths_in_seq(self):
         return len(self.image_filenames)
 
@@ -68,14 +71,8 @@ class DigitalTyphoonSequence:
             raise ValueError(f'Requested idx {idx} is outside range of sequence images ({len(self.image_filenames)})')
         return self._get_h5_image_as_numpy(self.image_filenames[idx], spectrum)
 
-    @staticmethod
-    def total_idx_to_sequence_idx(total_idx: int, frame_interval: Tuple[int, int]) -> int:
-        if not frame_interval[0] <= total_idx <= frame_interval[1]:
-            raise ValueError(f'Total idx {total_idx} must be within frame interval for sequence {frame_interval}')
-        return total_idx - frame_interval[0]
-
     def _get_h5_image_as_numpy(self, filename, spectrum='infrared'):
-        with h5py.File(self.img_root + filename, 'r') as h5f:
+        with h5py.File(self.img_root + '/' + filename, 'r') as h5f:
             image = np.array(h5f.get(spectrum))
         return image
 

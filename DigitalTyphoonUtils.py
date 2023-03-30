@@ -1,8 +1,31 @@
-import json
-import csv
 from datetime import datetime
-import pandas as pd
-import numpy as np
+from enum import Enum
+
+
+class SPLIT_UNIT(Enum):
+    SEQUENCE = 'sequence'
+    YEAR = 'year'
+    FRAME = 'frame'
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
+
+
+class LOAD_DATA(Enum):
+    NO_DATA = False
+    ONLY_TRACK = 'track'
+    ONLY_IMG = 'images'
+    ALL_DATA = 'all_data'
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
+
+
+def _verbose_print(string, verbose):
+    if verbose:
+        print(string)
 
 
 def parse_image_filename(filename: str, separator='-') -> (str, datetime, str):
@@ -15,9 +38,11 @@ def parse_image_filename(filename: str, separator='-') -> (str, datetime, str):
                                  day=date_day, hour=date_hour)
     return sequence_num, sequence_datetime, satellite
 
+
 def get_seq_str_from_track_filename(filename: str) -> str:
     sequence_num = filename.removesuffix(".csv")
     return sequence_num
+
 
 def is_image_file(filename: str) -> bool:
     return filename.endswith(".h5")
