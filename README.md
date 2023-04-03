@@ -57,7 +57,7 @@ _Below is a brief example on how to initialize and access data using the DataLoa
     # See the documentation for description of the optional parameters. 
     dataset_obj = DigitalTyphoonDataset("/path/to/image/directory", 
                                         "/path/to/track/directory", 
-                                        "/path/to/metadata.json`", 
+                                        "/path/to/metadata.json", 
                                         split_dataset_by='sequence',
                                         load_data_into_memory=False,
                                         verbose=True)
@@ -78,5 +78,3 @@ The dataset object is now instantiated and you can use the data in the desired f
     ```python
     train, test, val = dataset_obj.random_split([0.7, 0.15, 0.15], split_by='sequence')
     ```
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>

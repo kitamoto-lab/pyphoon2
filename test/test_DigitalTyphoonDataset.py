@@ -1,5 +1,6 @@
 from unittest import TestCase
 
+from torch.utils.data import random_split
 from DigitalTyphoonDataset import DigitalTyphoonDataset
 from DigitalTyphoonSequence import DigitalTyphoonSequence
 from DigitalTyphoonUtils import parse_image_filename
@@ -13,31 +14,34 @@ class TestDigitalTyphoonDataset(TestCase):
         test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", verbose=True)
         test_dataset._delete_all_sequences()
         for i in range(10):  # range of frames indices is 0 ~ 199
-            test_dataset.sequences.append((DigitalTyphoonSequence(str(i), 1990, 20),
-                                           (20*i, 20*i + 19)))
+            sequence_obj = (DigitalTyphoonSequence(str(i), 1990, 20))
+            test_dataset.sequences.append(sequence_obj)
+            for j in range(20*i, 20*i+20):
+                test_dataset._frame_idx_to_sequence[j] = sequence_obj
+            test_dataset._seq_str_to_first_total_idx[str(i)] = 20 * i
 
         # test first idx
-        result = test_dataset._find_sequence_str_from_index(0)
+        result = test_dataset._find_sequence_str_from_frame_index(0)
         if result != '0':
             self.fail(f'Should be \'0\'. Returned \'{result}\'')
 
         # test end of first interval
-        result = test_dataset._find_sequence_str_from_index(19)
+        result = test_dataset._find_sequence_str_from_frame_index(19)
         if result != '0':
             self.fail(f'Should be \'0\'. Returned \'{result}\'')
 
         # test middle of one interval
-        result = test_dataset._find_sequence_str_from_index(53)
+        result = test_dataset._find_sequence_str_from_frame_index(53)
         if result != '2':
             self.fail(f'Should be \'2\'. Returned \'{result}\'')
 
         # test end of one interval in the middle
-        result = test_dataset._find_sequence_str_from_index(49)
+        result = test_dataset._find_sequence_str_from_frame_index(49)
         if result != '2':
             self.fail(f'Should be \'2\'. Returned \'{result}\'')
 
         # test last index
-        result = test_dataset._find_sequence_str_from_index(199)
+        result = test_dataset._find_sequence_str_from_frame_index(199)
         if result != '9':
             self.fail(f'Should be \'9\'. Returned \'{result}\'')
 
@@ -72,23 +76,29 @@ class TestDigitalTyphoonDataset(TestCase):
     def test_populate_images_reads_file_correctly(self):
         test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/track/',
                                              'test_data_files/metadata.json', verbose=True)
-        read_in_image = test_dataset._get_image_from_idx_as_numpy(9)
-
-        first_values = [291.70111421052627, 291.2303478947368, 289.92525315789476, 289.92525315789476, 291.1126563157894]
-        last_values = [252.34170272727272, 258.19479750000005, 247.553022, 242.84900999999996, 238.26003375]
+        read_in_image = test_dataset._get_image_from_idx_as_numpy(4)
+        first_values = [296.30972999999994, 296.196816, 296.083902, 296.083902, 296.083902]
+        last_values = [285.80799, 284.56569, 285.18684, 281.78588999999994, 282.0398488235294]
 
         for i in range(len(first_values)):
             if read_in_image[0][i] != first_values[i]:
-                self.fail(f'Value given was {read_in_image[0][i]}. Should be {first_values[i]}')
+                self.fail(f'Value produced was {read_in_image[0][i]}. Should be {first_values[i]}')
             if read_in_image[-1][-i-1] != last_values[-i-1]:
-                self.fail(f'Value given was {read_in_image[-1][-i-1]}. Should be {last_values[-i-1]}')
+                self.fail(f'Value produced was {read_in_image[-1][-i-1]}. Should be {last_values[-i-1]}')
 
-    def test_parse_image_filename(self):
-        self.fail()
+    # def test_parse_image_filename(self):
+    #     self.fail()
+    #
+    # def test_parse_track_data_filename(self):
+    #     self.fail()
+    #
+    # def test_is_image_file(self):
+    #     self.fail()
 
-    def test_parse_track_data_filename(self):
-        self.fail()
-
-    def test_is_image_file(self):
-        self.fail()
-
+    def test_random_split(self):
+        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", verbose=True)
+        test_dataset.random_split([0.7, 0.3])
+        # test, train = random_split(test_dataset, [0, 0.7])
+        # print(len(test_dataset))
+        # print(len(test))
+        # print(len(train))
