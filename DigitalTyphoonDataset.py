@@ -19,7 +19,7 @@ class DigitalTyphoonDataset(Dataset):
                  image_dir: str,
                  track_dir: str,
                  metadata_filepath: str,
-                 split_dataset_by='sequence_str',  # can be [sequence_str, year, frame]
+                 split_dataset_by='sequence',  # can be [sequence, year, frame]
                  get_images_by_sequence=False,
                  load_data_into_memory=False,
                  verbose=False) -> None:
@@ -115,6 +115,10 @@ class DigitalTyphoonDataset(Dataset):
         else:
             return self._get_image_from_idx_as_numpy(idx)
 
+    # def get_image_metadata(self, idx: int) -> Dict[str, str]:
+    #     return 0
+
+
     def random_split(self, lengths: Sequence[Union[int, float]],
                      generator: Optional[Generator] = default_generator,
                      split_by=SPLIT_UNIT.SEQUENCE.value) -> List[Subset]:
@@ -173,7 +177,7 @@ class DigitalTyphoonDataset(Dataset):
         """
         return self.sequences
 
-    def process_metadata_file(self, filepath: str) -> Dict[str]:
+    def process_metadata_file(self, filepath: str):
         """
         Reads and processes JSON metadata file's information into dataset.
         :param filepath: path to metadata file
@@ -187,7 +191,7 @@ class DigitalTyphoonDataset(Dataset):
         for sequence_str, metadata in data.items():
             prev_interval_end = self._read_one_seq_from_metadata(sequence_str, metadata, prev_interval_end)
 
-        return data
+        # return data
 
     def _populate_images_into_sequences(self, image_dir: str) -> None:
         """
@@ -222,7 +226,7 @@ class DigitalTyphoonDataset(Dataset):
                         self._read_in_track_file_to_sequence(file_sequence, root + file)
 
     def _read_one_seq_from_metadata(self, sequence_str: str,
-                                    metadata_json: Dict[str],
+                                    metadata_json: Dict,
                                     prev_interval_end: int) -> int:
         """
         Processes one seq_str from the metadata JSON object.
