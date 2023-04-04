@@ -78,6 +78,13 @@ class DigitalTyphoonSequence:
         """
         return self.year
 
+    def get_num_frames(self) -> int:
+        """
+        Gets the number of frames in the sequence
+        :return: int
+        """
+        return len(self.images)
+
     def get_num_original_frames(self) -> int:
         """
         Get the number of images/frames in the sequence
