@@ -22,6 +22,7 @@ class DigitalTyphoonDataset(Dataset):
                  split_dataset_by='sequence',  # can be [sequence, year, frame]
                  get_images_by_sequence=False,
                  load_data_into_memory=False,
+                 ignore_list=None,
                  verbose=False) -> None:
         """
         Dataloader for the DigitalTyphoon dataset.
@@ -35,6 +36,7 @@ class DigitalTyphoonDataset(Dataset):
         :param load_data_into_memory:  String representing if the images and track data should be entirely loaded into
                                         memory. Options are "track" (only track data), "images" (only images), or
                                         "all_data" (both track and images).
+        :param ignore_list: a list of filenames (not path) to ignore and NOT add to the dataset
         :param verbose: Print verbose program information
         """
 
@@ -62,6 +64,9 @@ class DigitalTyphoonDataset(Dataset):
         # Path to the metadata file
         self.metadata_filepath = metadata_filepath
         self.verbose = verbose
+
+        # Set of image filepaths to ignore
+        self.ignore_list = set(ignore_list) if ignore_list else set([])
 
         # Structures holding the data objects
         self.sequences: List[DigitalTyphoonSequence] = list()  # List of seq_str objects
@@ -149,7 +154,31 @@ class DigitalTyphoonDataset(Dataset):
         elif split_by == SPLIT_UNIT.YEAR.value:
             return self._random_split_by_year(lengths, generator=generator)
         else:  # split_by == SPLIT_UNIT.SEQUENCE.value:
-            return self._random_split_by_year(lengths, generator=generator)
+            return self._random_split_by_sequence(lengths, generator=generator)
+
+    def images_from_year(self, year: str) -> List[Subset[int]]:
+        """
+        Given a start year, return the total dataset image indices of the images from the sequences starting in
+        the specified year. Returns it as a List of Subsets, where one inner list represents one sequence.
+        :param year: the start year as a string
+        :return: the List of Lists of sequences and their image indices
+        """
+        return_list = []
+        sequence_strs = self.get_all_seq_str_from_start_year(year)
+        for seq_str in sequence_strs:
+            seq_obj = self._get_seq_from_seq_str(seq_str)
+            return_list.append(Subset(self, self.seq_indices_to_total_indices(seq_obj)))
+        return return_list
+
+    def images_from_sequence(self, sequence_str: str) -> Subset[int]:
+        """
+        Given a sequence ID, returns a Subset of the dataset of the images in that sequence
+        :param sequence_str: str, the sequence ID
+        :return: Subset of the total dataset
+        """
+        seq_object = self._get_seq_from_seq_str(sequence_str)
+        indices = self.seq_indices_to_total_indices(seq_object)
+        return Subset(self, indices)
 
     def get_number_of_sequences(self):
         """
@@ -166,13 +195,6 @@ class DigitalTyphoonDataset(Dataset):
         """
         return seq_str in self._sequence_str_to_seq_idx
 
-    def _get_list_of_sequence_objs(self) -> List[DigitalTyphoonSequence]:
-        """
-        Gives list of seq_str objects
-        :return: List[DigitalTyphoonSequence]
-        """
-        return self.sequences
-
     def process_metadata_file(self, filepath: str):
         """
         Reads and processes JSON metadata file's information into dataset.
@@ -187,7 +209,57 @@ class DigitalTyphoonDataset(Dataset):
         for sequence_str, metadata in data.items():
             prev_interval_end = self._read_one_seq_from_metadata(sequence_str, metadata, prev_interval_end)
 
-        # return data
+    def get_all_seq_str_from_start_year(self, year: str) -> List[str]:
+        """
+        Given a start year, give the sequence ID strings of all sequences that start in that year.
+        :param year: the start year as a string
+        :return: a list of the sequence IDs starting in that year
+        """
+        if year not in self.years_to_sequence_nums:
+            raise ValueError(f'Year \'{year}\' is not within the list of start years.')
+        return self.years_to_sequence_nums[year]
+
+    def total_frame_idx_to_sequence_idx(self, total_idx: int) -> int:
+        """
+        Given a total dataset image index, returns that image's index in its respective sequence. e.g. an image that is
+        the 500th in the total dataset may be the 5th image in its sequence.
+        :param total_idx: the total dataset image index
+        :return: the inner-sequence image index.
+        """
+        sequence = self._frame_idx_to_sequence[total_idx]
+        start_idx = self._seq_str_to_first_total_idx[sequence.get_sequence_str()]
+        if total_idx >= self.number_of_frames:
+            raise ValueError(f'Frame {total_idx} is beyond the number of frames in the dataset.')
+        return total_idx - start_idx
+
+    def seq_idx_to_total_frame_idx(self, seq_str: str, seq_idx: int) -> int:
+        """
+        Given an image with seq_idx position within its sequence, return its total idx within the greater dataset. e.g.
+        an image that is the 5th image in the sequence may be the 500th in the total dataset.
+        :param seq_str: The sequence ID string to search within
+        :param seq_idx: int, the index within the given sequence
+        :return: int, the total index within the dataset
+        """
+        sequence_obj = self._get_seq_from_seq_str(seq_str)
+        if seq_idx >= sequence_obj.get_num_images():
+            raise ValueError(f'Frame {seq_idx} is beyond the number of frames in the dataset.')
+        return self._seq_str_to_first_total_idx[seq_str] + seq_idx
+
+    def seq_indices_to_total_indices(self, seq_obj: DigitalTyphoonSequence) -> List[int]:
+        """
+        Given a sequence, return a list of the total dataset indices of the sequence's images.
+        :param seq_obj: the DigitalTyphoonSequence object to produce the list from
+        :return: the List of total dataset indices
+        """
+        seq_str = seq_obj.get_sequence_str()
+        return [i + self._seq_str_to_first_total_idx[seq_str] for i in range(seq_obj.get_num_images())]
+
+    def _get_list_of_sequence_objs(self) -> List[DigitalTyphoonSequence]:
+        """
+        Gives list of seq_str objects
+        :return: List[DigitalTyphoonSequence]
+        """
+        return self.sequences
 
     def _populate_images_into_sequences(self, image_dir: str) -> None:
         """
@@ -200,12 +272,12 @@ class DigitalTyphoonDataset(Dataset):
         for root, dirs, files in os.walk(image_dir, topdown=True):
             for dir_name in sorted(dirs):  # Read sequences in chronological order, not necessary but convenient
                 sequence_obj = self._get_seq_from_seq_str(dir_name)
-                sequence_obj.process_seq_img_dir_into_sequence(root+dir_name, load_into_mem)
+                sequence_obj.process_seq_img_dir_into_sequence(root+dir_name, load_into_mem, ignore_list=self.ignore_list)
 
         for sequence in self.sequences:
             if not sequence.num_images_match_num_frames():
-                raise ValueError(f'Sequence {sequence.sequence_str} has only {sequence.num_image_paths_in_seq()} when '
-                                 f'it should have {sequence.num_frames}.')
+                warnings.warn(f'Sequence {sequence.sequence_str} has only {sequence.get_num_images()} when '
+                              f'it should have {sequence.num_frames}. If this is intended, ignore this warning.')
 
     def _populate_track_data_into_sequences(self, track_dir: str) -> None:
         """
@@ -392,65 +464,6 @@ class DigitalTyphoonDataset(Dataset):
         sequence_str = self._find_sequence_str_from_frame_index(idx)
         sequence = self._get_seq_from_seq_str(sequence_str)
         return sequence.get_image_at_idx_as_numpy(self.total_frame_idx_to_sequence_idx(idx))
-
-    def get_all_seq_str_from_start_year(self, year: str) -> List[str]:
-        """
-        Given a start year, give the sequence ID strings of all sequences that start in that year.
-        :param year: the start year as a string
-        :return: a list of the sequence IDs starting in that year
-        """
-        if year not in self.years_to_sequence_nums:
-            raise ValueError(f'Year \'{year}\' is not within the list of start years.')
-        return self.years_to_sequence_nums[year]
-
-    def get_all_seq_idx_from_start_year(self, year: str) -> List[List[int]]:
-        """
-        Given a start year, return the total dataset image indices of the images from the sequences starting in
-        the specified year. Returns it as a List of Lists, where one inner list represents one sequence.
-        :param year: the start year as a string
-        :return: the List of Lists of sequences and their image indices
-        """
-        return_list = []
-        sequence_strs = self.get_all_seq_str_from_start_year(year)
-        for seq_str in sequence_strs:
-            seq_obj = self._get_seq_from_seq_str(seq_str)
-            return_list.append(self.seq_indices_to_total_indices(seq_obj))
-        return return_list
-
-    def total_frame_idx_to_sequence_idx(self, total_idx: int) -> int:
-        """
-        Given a total dataset image index, returns that image's index in its respective sequence. e.g. an image that is
-        the 500th in the total dataset may be the 5th image in its sequence.
-        :param total_idx: the total dataset image index
-        :return: the inner-sequence image index.
-        """
-        sequence = self._frame_idx_to_sequence[total_idx]
-        start_idx = self._seq_str_to_first_total_idx[sequence.get_sequence_str()]
-        if total_idx >= self.number_of_frames:
-            raise ValueError(f'Frame {total_idx} is beyond the number of frames in the dataset.')
-        return total_idx - start_idx
-
-    def seq_idx_to_total_frame_idx(self, seq_str: str, seq_idx: int) -> int:
-        """
-        Given an image with seq_idx position within its sequence, return its total idx within the greater dataset. e.g.
-        an image that is the 5th image in the sequence may be the 500th in the total dataset.
-        :param seq_str: The sequence ID string to search within
-        :param seq_idx: int, the index within the given sequence
-        :return: int, the total index within the dataset
-        """
-        sequence_obj = self._get_seq_from_seq_str(seq_str)
-        if seq_idx >= sequence_obj.get_num_frames():
-            raise ValueError(f'Frame {seq_idx} is beyond the number of frames in the dataset.')
-        return self._seq_str_to_first_total_idx[seq_str] + seq_idx
-
-    def seq_indices_to_total_indices(self, seq_obj: DigitalTyphoonSequence) -> List[int]:
-        """
-        Given a sequence, return a list of the total dataset indices of the sequence's images.
-        :param seq_obj: the DigitalTyphoonSequence object to produce the list from
-        :return: the List of total dataset indices
-        """
-        seq_str = seq_obj.get_sequence_str()
-        return [i + self._seq_str_to_first_total_idx[seq_str] for i in range(seq_obj.get_num_frames())]
 
     def _delete_all_sequences(self):
         """

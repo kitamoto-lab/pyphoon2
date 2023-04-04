@@ -45,7 +45,10 @@ class DigitalTyphoonSequence:
         """
         return self.sequence_str
 
-    def process_seq_img_dir_into_sequence(self, directory_path: str, load_imgs_into_mem=False, spectrum='infrared') -> None:
+    def process_seq_img_dir_into_sequence(self, directory_path: str,
+                                          load_imgs_into_mem=False,
+                                          ignore_list=None,
+                                          spectrum='infrared') -> None:
         """
         Given a path to a directory containing images of a typhoon sequence, process the images into the current
         sequence object. If 'load_imgs_into_mem' is set to True, the images will be read as numpy arrays and stored in
@@ -56,12 +59,18 @@ class DigitalTyphoonSequence:
         :param spectrum: string representing what spectrum the image lies in
         :return: None
         """
+        if ignore_list is None:
+            ignore_list = set([])
+
         self.set_images_root_path(directory_path)
         for root, dirs, files in os.walk(directory_path, topdown=True):
             filepaths = [(file,) + parse_image_filename(file) for file in files if is_image_file(file)]
             filepaths.sort(key=lambda x: x[2])  # sort by datetime
             for filepath, file_sequence, file_date, file_satellite in filepaths:
-                image_obj = DigitalTyphoonImage(self.img_root / filepath, [],
+                if filepath in ignore_list:
+                    continue
+
+                image_obj = DigitalTyphoonImage(self.img_root / filepath, np.ndarray([]),
                                                 load_imgs_into_mem=load_imgs_into_mem,
                                                 spectrum=spectrum)
                 self.images.append(image_obj)
@@ -78,7 +87,7 @@ class DigitalTyphoonSequence:
         """
         return self.year
 
-    def get_num_frames(self) -> int:
+    def get_num_images(self) -> int:
         """
         Gets the number of frames in the sequence
         :return: int
