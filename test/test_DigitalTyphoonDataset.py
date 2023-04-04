@@ -1,3 +1,4 @@
+import os.path
 from unittest import TestCase
 
 from torch.utils.data import random_split
@@ -49,8 +50,8 @@ class TestDigitalTyphoonDataset(TestCase):
         test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", verbose=True)
         sequences_list = test_dataset._get_list_of_sequence_objs()
         for sequence in sequences_list:
-            image_paths = sequence.get_image_filenames()
-            datelist = [parse_image_filename(image_path)[1] for image_path in image_paths]
+            image_paths = sequence.get_image_filepaths()
+            datelist = [parse_image_filename(os.path.basename(image_path))[1] for image_path in image_paths]
             sorted_datelist = sorted(datelist)
             for i in range(0, len(datelist)):
                 if datelist[i] != sorted_datelist[i]:

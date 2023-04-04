@@ -115,10 +115,6 @@ class DigitalTyphoonDataset(Dataset):
         else:
             return self._get_image_from_idx_as_numpy(idx)
 
-    # def get_image_metadata(self, idx: int) -> Dict[str, str]:
-    #     return 0
-
-
     def random_split(self, lengths: Sequence[Union[int, float]],
                      generator: Optional[Generator] = default_generator,
                      split_by=SPLIT_UNIT.SEQUENCE.value) -> List[Subset]:
@@ -141,7 +137,7 @@ class DigitalTyphoonDataset(Dataset):
         :param split_by: What to treat as an atomic unit (image, seq_str, year)
         :return: List[Subset[idx]]
         """
-        _verbose_print(f"Splitting the dataset into proportions {lengths}, by {split_by}.")
+        _verbose_print(f"Splitting the dataset into proportions {lengths}, by {split_by}.", verbose=self.verbose)
 
         if not SPLIT_UNIT.has_value(split_by):
             warnings.warn(f'Split unit \'{split_by}\' is not within the list of known split units: '
@@ -237,7 +233,10 @@ class DigitalTyphoonDataset(Dataset):
         """
         seq_start_date = datetime.strptime(metadata_json['start'], '%Y-%m-%d')
 
-        self.sequences.append(DigitalTyphoonSequence(sequence_str, seq_start_date.year, metadata_json['frames']))
+        self.sequences.append(DigitalTyphoonSequence(sequence_str,
+                                                     seq_start_date.year,
+                                                     metadata_json['frames'],
+                                                     verbose=self.verbose))
         self._sequence_str_to_seq_idx[sequence_str] = len(self.sequences) - 1
 
         frame_interval = (prev_interval_end + 1, prev_interval_end + metadata_json['frames'])  # frame ends inclusive
@@ -261,7 +260,7 @@ class DigitalTyphoonDataset(Dataset):
         :return: the DigitalTyphoonSequence object that was just populated
         """
         sequence = self._get_seq_from_seq_str(seq_str)
-        sequence.add_track_data(file, csv_delimiter)
+        sequence.process_track_data(file, csv_delimiter)
         return sequence
 
     def _calculate_split_lengths(self, lengths: Sequence[Union[int, float]]) -> List[int]:

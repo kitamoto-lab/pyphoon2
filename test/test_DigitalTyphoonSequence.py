@@ -17,20 +17,20 @@ class TestDigitalTyphoonSequence(TestCase):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
 
-        if len(test_sequence.image_arrays) != 5:
-            self.fail(f'Sequence should have 157 images loaded in. Program gave {len(test_sequence.image_filenames)}')
+        if len(test_sequence.images) != 5:
+            self.fail(f'Sequence should have 5 images loaded in. Program gave {len(test_sequence.image_filenames)}')
 
     def test_process_seq_img_dir_into_seq_no_image_loading_should_process_correctly(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/')
         should_be = [
-            '2008041300-200801-MTS1-1.h5',
-            '2008041301-200801-MTS1-1.h5',
-            '2008041302-200801-MTS1-1.h5',
-            '2008041303-200801-MTS1-1.h5',
-            '2008041304-200801-MTS1-1.h5'
+            'test_data_files/image/200801/2008041300-200801-MTS1-1.h5',
+            'test_data_files/image/200801/2008041301-200801-MTS1-1.h5',
+            'test_data_files/image/200801/2008041302-200801-MTS1-1.h5',
+            'test_data_files/image/200801/2008041303-200801-MTS1-1.h5',
+            'test_data_files/image/200801/2008041304-200801-MTS1-1.h5'
         ]
-        filenames = test_sequence.get_image_filenames()
+        filenames = test_sequence.get_image_filepaths()
         if should_be != filenames:
             self.fail(f'Processed filenames is incorrect. Program gave: \n {filenames} \n Should be: \n {should_be}')
 
@@ -38,15 +38,8 @@ class TestDigitalTyphoonSequence(TestCase):
         should_have = 5
         test_sequence = DigitalTyphoonSequence('200801', 2008, should_have)
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
-        if len(test_sequence.image_arrays) != should_have:
+        if len(test_sequence.images) != should_have:
             self.fail(f'Sequence should have {should_have}. Program gave {len(test_sequence.image_arrays)}')
-
-    def test_append_image_to_sequence(self):
-        test_typhoon_image = MagicMock()
-        test_sequence = DigitalTyphoonSequence('', MagicMock())
-        returned_image = test_sequence.append_image_to_sequence(test_typhoon_image)
-        if test_typhoon_image != returned_image:
-            self.fail()
 
     def test_has_images(self):
 
@@ -79,7 +72,7 @@ class TestDigitalTyphoonSequence(TestCase):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=False)
 
-        if len(test_sequence.image_filenames) != 5:
+        if len(test_sequence.images) != 5:
             self.fail(f'Sequence should have 5 images. Program gave {len(test_sequence.image_filenames)}')
 
         sequence_imgs = test_sequence.return_all_images_in_sequence_as_np()

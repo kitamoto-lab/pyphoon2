@@ -1,36 +1,42 @@
 import os
+import warnings
+from datetime import datetime
+
 import h5py
+from pathlib import Path
 import numpy as np
-from typing import List
+from typing import List, Dict
 import pandas as pd
 
-from DigitalTyphoonUtils import parse_image_filename, is_image_file
+from DigitalTyphoonImage import DigitalTyphoonImage
+from DigitalTyphoonUtils import parse_image_filename, is_image_file, TRACK_COLS
 
 
 class DigitalTyphoonSequence:
 
-    def __init__(self, seq_str: str, start_year: int, num_frames: int):
+    def __init__(self, seq_str: str, start_year: int, num_frames: int, verbose=False):
         """
         Class representing one typhoon sequence from the DigitalTyphoon dataset
         :param seq_str: str, sequence ID as a string
         :param start_year: int, the year in which the typhoon starts in
         :param num_frames: int, number of frames/images in the sequence
         """
+        self.verbose = verbose
+
         self.sequence_str = seq_str  # sequence ID string
         self.year = start_year
         self.num_frames = num_frames
         self.track_data = np.array([])
         self.img_root = None  # root path to directory containing image files
-        self.track_path = None # path to track file data
+        self.track_path = None  # path to track file data
 
-        # Ordered list containing paths to image_arrays
-        self.image_filenames: List[str] = list()
+        # Ordered list containing image objects with metadata
+        self.images: List[DigitalTyphoonImage] = list()
 
-        # Ordered list containing sequence_str image_arrays
-        self.image_arrays: List[np.ndarray] = list()
+        # Dictionary mapping datetime to Image objects
+        self.datetime_to_image: Dict[datetime, DigitalTyphoonImage] = {}
 
-        # Track data
-        self.track_data = None  # np array containing track data
+        # TODO: add synthetic image value into metadata and consistency check within dataset loader
 
     def get_sequence_str(self) -> str:
         """
@@ -55,27 +61,15 @@ class DigitalTyphoonSequence:
             filepaths = [(file,) + parse_image_filename(file) for file in files if is_image_file(file)]
             filepaths.sort(key=lambda x: x[2])  # sort by datetime
             for filepath, file_sequence, file_date, file_satellite in filepaths:
-                self.append_image_path_to_seq(filepath)
-                if load_imgs_into_mem:
-                    self.append_image_to_sequence(self._get_h5_image_as_numpy(filepath, spectrum))
+                image_obj = DigitalTyphoonImage(self.img_root / filepath, [],
+                                                load_imgs_into_mem=load_imgs_into_mem,
+                                                spectrum=spectrum)
+                self.images.append(image_obj)
+                self.datetime_to_image[file_date] = image_obj
 
-    def append_image_path_to_seq(self, image_path: str) -> str:
-        """
-        Given a path to an image, appends it to the end of the image list in the sequence.
-        :param image_path: str, path to image file
-        :return: str, path to the image file
-        """
-        self.image_filenames.append(image_path)
-        return self.image_filenames[-1]
-
-    def append_image_to_sequence(self, image: np.ndarray) -> np.ndarray:
-        """
-        Given an image array, appends it to the end of the image array list in the sequence.
-        :param image: np.ndarray, image array
-        :return: np.ndarray, the image array
-        """
-        self.image_arrays.append(image)
-        return self.image_arrays[-1]
+        if not self.num_images_match_num_frames():
+            warnings.warn(f'The number of images ({len(self.images)}) does not match the '
+                          f'number of expected frames ({self.num_frames}). If this is expected, ignore this warning.')
 
     def get_start_year(self) -> int:
         """
@@ -84,26 +78,40 @@ class DigitalTyphoonSequence:
         """
         return self.year
 
-    def get_num_frames(self) -> int:
+    def get_num_original_frames(self) -> int:
         """
         Get the number of images/frames in the sequence
         :return: int, the number of frames
         """
         return self.num_frames
 
-    def num_image_paths_in_seq(self) -> int:
-        """
-        Get the number of image filepaths currently stored in the sequence
-        :return: int, the number of image filepaths
-        """
-        return len(self.image_filenames)
-
     def has_images(self) -> bool:
         """
         Returns true if the sequence currently holds images (or image filepaths). False otherwise.
         :return: bool
         """
-        return len(self.image_arrays) != 0
+        return len(self.images) != 0
+
+    def process_track_data(self, track_filepath: str, csv_delimiter=',') -> None:
+        """
+        Takes in the track data for the sequence and processes it into the images for the sequence.
+        :param track_filepath: str, path to track csv
+        :param csv_delimiter: delimiter for the csv file
+        :return: None
+        """
+        df = pd.read_csv(track_filepath, delimiter=csv_delimiter)
+        data = df.to_numpy()
+        total_num_track = len(data)
+        num_track_with_images = 0
+        for row in data:
+            row_datetime = datetime(row[TRACK_COLS.YEAR.value], row[TRACK_COLS.MONTH.value],
+                                    row[TRACK_COLS.DAY.value], row[TRACK_COLS.HOUR.value])
+            if row_datetime in self.datetime_to_image:
+                self.datetime_to_image[row_datetime].set_track_data(row)
+                num_track_with_images += 1
+
+        if self.verbose:
+            warnings.warn(f'Only {num_track_with_images} of {total_num_track} track entries have images.')
 
     def add_track_data(self, filename: str, csv_delimiter=',') -> None:
         """
@@ -146,20 +154,9 @@ class DigitalTyphoonSequence:
         :param spectrum: str, spectrum of the image
         :return: np.ndarray, image as a numpy array with shape of the image dimensions
         """
-        if idx < 0 or idx >= len(self.image_filenames):
-            raise ValueError(f'Requested idx {idx} is outside range of sequence images ({len(self.image_filenames)})')
-        return self._get_h5_image_as_numpy(self.image_filenames[idx], spectrum)
-
-    def _get_h5_image_as_numpy(self, filename: str, spectrum='infrared') -> np.ndarray:
-        """
-        Given an h5 image filepath, open and return the image as a numpy array
-        :param filename: str, the filepath to the h5 image
-        :param spectrum: str, the spectrum of the image
-        :return: np.ndarray, image as a numpy array with shape of the image dimensions
-        """
-        with h5py.File(self.img_root + '/' + filename, 'r') as h5f:
-            image = np.array(h5f.get(spectrum))
-        return image
+        if idx < 0 or idx >= len(self.images):
+            raise ValueError(f'Requested idx {idx} is outside range of sequence images ({len(self.images)})')
+        return self.images[idx].image()
 
     def return_all_images_in_sequence_as_np(self, spectrum='infrared') -> np.ndarray:
         """
@@ -167,10 +164,7 @@ class DigitalTyphoonSequence:
         :param spectrum: str, spectrum of the image
         :return: np.ndarray of shape (num_image, image_shape[0], image_shape[1])
         """
-        if len(self.image_arrays) > 0:
-            return np.array(self.image_arrays)
-        else:
-            return np.array([self._get_h5_image_as_numpy(filename, spectrum) for filename in self.image_filenames])
+        return np.array([image.image() for image in self.images])
 
     def num_images_match_num_frames(self) -> bool:
         """
@@ -178,14 +172,14 @@ class DigitalTyphoonSequence:
         the sequence object. False otherwise.
         :return: bool
         """
-        return len(self.image_filenames) == self.num_frames
+        return len(self.images) == self.num_frames
 
-    def get_image_filenames(self) -> List[str]:
+    def get_image_filepaths(self) -> List[str]:
         """
         Returns a list of the filenames of the images (without the root path)
         :return: List[str], list of the filenames
         """
-        return self.image_filenames
+        return [image.filepath() for image in self.images]
 
     def set_images_root_path(self, images_root_path: str) -> None:
         """
@@ -194,7 +188,7 @@ class DigitalTyphoonSequence:
         :return: None
         """
         if not self.img_root:
-            self.img_root = images_root_path
+            self.img_root = Path(images_root_path)
 
     def get_images_root_path(self) -> None:
         """
