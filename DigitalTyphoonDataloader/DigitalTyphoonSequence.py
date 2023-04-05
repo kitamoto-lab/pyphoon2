@@ -148,7 +148,7 @@ class DigitalTyphoonSequence:
         if not self.track_path:
             self.track_path = track_path
 
-    def get_track_path(self) -> None:
+    def get_track_path(self) -> str:
         """
         Gets the path to the track data file
         :return: str, the path to the track data file
@@ -206,7 +206,7 @@ class DigitalTyphoonSequence:
         if not self.img_root:
             self.img_root = Path(images_root_path)
 
-    def get_images_root_path(self) -> None:
+    def get_images_root_path(self) -> str:
         """
         Gets the root path to the image directory
         :return: str, the root path
