@@ -8,8 +8,8 @@ import numpy as np
 from typing import List, Dict
 import pandas as pd
 
-from DigitalTyphoonImage import DigitalTyphoonImage
-from DigitalTyphoonUtils import parse_image_filename, is_image_file, TRACK_COLS
+from DigitalTyphoonDataloader.DigitalTyphoonImage import DigitalTyphoonImage
+from DigitalTyphoonDataloader.DigitalTyphoonUtils import parse_image_filename, is_image_file, TRACK_COLS
 
 
 class DigitalTyphoonSequence:

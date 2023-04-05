@@ -1,10 +1,9 @@
 import os.path
 from unittest import TestCase
 
-from torch.utils.data import random_split
-from DigitalTyphoonDataset import DigitalTyphoonDataset
-from DigitalTyphoonSequence import DigitalTyphoonSequence
-from DigitalTyphoonUtils import parse_image_filename
+from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
+from DigitalTyphoonDataloader.DigitalTyphoonSequence import DigitalTyphoonSequence
+from DigitalTyphoonDataloader.DigitalTyphoonUtils import parse_image_filename
 
 
 class TestDigitalTyphoonDataset(TestCase):
@@ -21,27 +20,27 @@ class TestDigitalTyphoonDataset(TestCase):
                 test_dataset._frame_idx_to_sequence[j] = sequence_obj
             test_dataset._seq_str_to_first_total_idx[str(i)] = 20 * i
 
-        # test first idx
+        # tests first idx
         result = test_dataset._find_sequence_str_from_frame_index(0)
         if result != '0':
             self.fail(f'Should be \'0\'. Returned \'{result}\'')
 
-        # test end of first interval
+        # tests end of first interval
         result = test_dataset._find_sequence_str_from_frame_index(19)
         if result != '0':
             self.fail(f'Should be \'0\'. Returned \'{result}\'')
 
-        # test middle of one interval
+        # tests middle of one interval
         result = test_dataset._find_sequence_str_from_frame_index(53)
         if result != '2':
             self.fail(f'Should be \'2\'. Returned \'{result}\'')
 
-        # test end of one interval in the middle
+        # tests end of one interval in the middle
         result = test_dataset._find_sequence_str_from_frame_index(49)
         if result != '2':
             self.fail(f'Should be \'2\'. Returned \'{result}\'')
 
-        # test last index
+        # tests last index
         result = test_dataset._find_sequence_str_from_frame_index(199)
         if result != '9':
             self.fail(f'Should be \'9\'. Returned \'{result}\'')
@@ -99,7 +98,7 @@ class TestDigitalTyphoonDataset(TestCase):
     def test_random_split(self):
         test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", verbose=True)
         test_dataset.random_split([0.7, 0.3])
-        # test, train = random_split(test_dataset, [0, 0.7])
+        # tests, train = random_split(test_dataset, [0, 0.7])
         # print(len(test_dataset))
-        # print(len(test))
+        # print(len(tests))
         # print(len(train))

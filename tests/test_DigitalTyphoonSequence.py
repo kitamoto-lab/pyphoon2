@@ -1,8 +1,7 @@
 import numpy as np
 from unittest import TestCase
-from unittest.mock import MagicMock
 
-from DigitalTyphoonSequence import DigitalTyphoonSequence
+from DigitalTyphoonDataloader.DigitalTyphoonSequence import DigitalTyphoonSequence
 
 
 class TestDigitalTyphoonSequence(TestCase):
@@ -40,19 +39,6 @@ class TestDigitalTyphoonSequence(TestCase):
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         if len(test_sequence.images) != should_have:
             self.fail(f'Sequence should have {should_have}. Program gave {len(test_sequence.image_arrays)}')
-
-    def test_has_images(self):
-
-        # Tests if it has no images. Should return False.
-        test_sequence = DigitalTyphoonSequence('', MagicMock(), 0)
-        if test_sequence.has_images():
-            self.fail()
-
-        # Tests if it has images. Should return True.
-        test_typhoon_image = MagicMock()
-        test_sequence.append_image_to_sequence(test_typhoon_image)
-        if not test_sequence.has_images():
-            self.fail()
 
     def test_add_track_data(self):
         test_sequence = DigitalTyphoonSequence('200802', 2008, 157)

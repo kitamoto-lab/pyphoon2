@@ -20,39 +20,46 @@ between the buckets.
 
 ### Prerequisites
 
-_Below are the libraries required to use the loader. Python3 is required. Installation instructions are below._
-
-* PyTorch
-  ```sh
-  pip3 install torch torchvision  
-  ```
-  
+This project uses:
+* python3
+* torch
+* torchvision
 * numpy
-  ```sh
-  pip3 install numpy
-  ```
 * pandas
-  ```sh
-  pip3 install pandas  
-  ```
-* h5
-  ```sh
-  pip3 install h5py
-  ```
+* h5py
+
+### Installation
+
+1. Clone and enter the repo 
+    ```sh
+    git clone https://github.com/jared-hwang/DigitalTyphoonDataset
+    cd DigitalTyphoonDataset
+    ```
+2. Install the package
+    ```sh
+    pip3 install .
+    ```
+3. To uninstall, run
+    ```sh
+    pip3 uninstall DigitalTyphoonDataloader
+    ```
   
 ### Usage
 
 _Below is a brief example on how to initialize and access data using the DataLoader:_ 
 
-1. Clone the repo
-    ```sh
-    git clone https://github.com/jared-hwang/DigitalTyphoonDataset.git
-    ```
-2. Import the Dataloader class
+1. Import the Dataset class
     ```python
-    from DigitalTyphoonDataset import DigitalTyphoonDataset
+    from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
     ```
-3. Instantiate the loader
+   You can also import the submodules `DigitalTyphoonSequence`, `DigitalTyphoonImage`, and 
+    `DigitalTyphoonUtils` in the same way if desired:
+    ```python
+    from DigitalTyphoonDataloader.DigitalTyphoonSequence import DigitalTyphoonSequence
+    from DigitalTyphoonDataloader.DigitalTyphoonImage import DigitalTyphoonImage
+    from DigitalTyphoonDataloader.DigitalTyphoonUtils import *
+    ```
+2. Instantiate the loader
     ```python
     # See the documentation for description of the optional parameters. 
     dataset_obj = DigitalTyphoonDataset("/path/to/image/directory", 
@@ -60,6 +67,7 @@ _Below is a brief example on how to initialize and access data using the DataLoa
                                         "/path/to/metadata.json", 
                                         split_dataset_by='sequence',
                                         load_data_into_memory=False,
+                                        ignore_list=[],
                                         verbose=True)
     ```
 The dataset object is now instantiated and you can use the data in the desired fashion. Some examples include: 
