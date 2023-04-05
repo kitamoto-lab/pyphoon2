@@ -13,6 +13,8 @@ class DigitalTyphoonImage:
         """
         Class for one image with metadata for the DigitalTyphoonDataset
 
+        Does NOT check for file existence until accessing the image.
+
         :param image_filepath: str, path to image file
         :param track_entry: np.ndarray, 1d numpy array for the track csv entry corresponding to the image
         :param load_imgs_into_mem: bool, flag indicating whether images should be loaded into memory
@@ -28,6 +30,8 @@ class DigitalTyphoonImage:
             self.image()  # Load the image on instantiation if load_imgs_into_mem is set to True
 
         self.track_data = track_entry
+        if track_entry is not None:
+            self.set_track_data(track_entry)
 
     def image(self, spectrum='infrared') -> np.ndarray:
         """
@@ -43,7 +47,7 @@ class DigitalTyphoonImage:
             self.image_array = image
         return image
 
-    def track_data(self) -> np.ndarray:
+    def track_array(self) -> np.ndarray:
         """
         Returns the csv row for this image
         :return: nparray containing the track data
@@ -84,6 +88,13 @@ class DigitalTyphoonImage:
         :return: datetime
         """
         return datetime(self.year(), self.month(), self.day(), self.hour())
+
+    def grade(self) -> int:
+        """
+        Returns the grade of the typhoon in the image
+        :return: int, the grade
+        """
+        return int(self.track_data[TRACK_COLS.GRADE.value])
 
     def lat(self) -> float:
         """

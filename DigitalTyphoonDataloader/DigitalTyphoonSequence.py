@@ -70,7 +70,7 @@ class DigitalTyphoonSequence:
                 if filepath in ignore_list:
                     continue
 
-                image_obj = DigitalTyphoonImage(self.img_root / filepath, np.ndarray([]),
+                image_obj = DigitalTyphoonImage(self.img_root / filepath, None,
                                                 load_imgs_into_mem=load_imgs_into_mem,
                                                 spectrum=spectrum)
                 self.images.append(image_obj)
