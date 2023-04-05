@@ -178,7 +178,7 @@ class DigitalTyphoonImage:
         Returns whether this entry is interpolated or not
         :return: bool
         """
-        return self.track_data[TRACK_COLS.INTERPOLATED.value]
+        return bool(self.track_data[TRACK_COLS.INTERPOLATED.value])
 
     def filepath(self) -> str:
         """

@@ -127,7 +127,8 @@ class DigitalTyphoonSequence:
                 num_track_with_images += 1
 
         if self.verbose:
-            warnings.warn(f'Only {num_track_with_images} of {total_num_track} track entries have images.')
+            if num_track_with_images < total_num_track:
+                warnings.warn(f'Only {num_track_with_images} of {total_num_track} track entries have images.')
 
     def add_track_data(self, filename: str, csv_delimiter=',') -> None:
         """

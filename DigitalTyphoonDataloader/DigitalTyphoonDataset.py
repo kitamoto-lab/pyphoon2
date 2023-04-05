@@ -145,9 +145,10 @@ class DigitalTyphoonDataset(Dataset):
         :param split_by: What to treat as an atomic unit (image, seq_str, year)
         :return: List[Subset[idx]]
         """
-        _verbose_print(f"Splitting the dataset into proportions {lengths}, by {split_by}.", verbose=self.verbose)
         if split_by is None:
             split_by = self.split_dataset_by
+
+        _verbose_print(f"Splitting the dataset into proportions {lengths}, by {split_by}.", verbose=self.verbose)
 
         if not SPLIT_UNIT.has_value(split_by):
             warnings.warn(f'Split unit \'{split_by}\' is not within the list of known split units: '
@@ -296,8 +297,8 @@ class DigitalTyphoonDataset(Dataset):
                 file_sequence = get_seq_str_from_track_filename(file)
                 if self.sequence_exists(file_sequence):
                     self._get_seq_from_seq_str(file_sequence).set_track_path(root + file)
-                    if self.load_data_into_memory in {LOAD_DATA.ONLY_TRACK, LOAD_DATA.ALL_DATA}:
-                        self._read_in_track_file_to_sequence(file_sequence, root + file)
+                    # if self.load_data_into_memory in {LOAD_DATA.ONLY_TRACK, LOAD_DATA.ALL_DATA}:
+                    self._read_in_track_file_to_sequence(file_sequence, root + file)
 
     def _read_one_seq_from_metadata(self, sequence_str: str,
                                     metadata_json: Dict,
@@ -329,7 +330,7 @@ class DigitalTyphoonDataset(Dataset):
 
         return frame_interval[1]
 
-    def _read_in_track_file_to_sequence(self, seq_str: str, file: str, csv_delimiter='\t') -> DigitalTyphoonSequence:
+    def _read_in_track_file_to_sequence(self, seq_str: str, file: str, csv_delimiter=',') -> DigitalTyphoonSequence:
         """
         Processes one track file into its seq_str.
         :param seq_str: string of the seq_str ID
