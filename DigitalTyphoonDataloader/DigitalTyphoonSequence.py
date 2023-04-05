@@ -120,8 +120,8 @@ class DigitalTyphoonSequence:
         total_num_track = len(data)
         num_track_with_images = 0
         for row in data:
-            row_datetime = datetime(row[TRACK_COLS.YEAR.value], row[TRACK_COLS.MONTH.value],
-                                    row[TRACK_COLS.DAY.value], row[TRACK_COLS.HOUR.value])
+            row_datetime = datetime(int(row[TRACK_COLS.YEAR.value]), int(row[TRACK_COLS.MONTH.value]),
+                                    int(row[TRACK_COLS.DAY.value]), int(row[TRACK_COLS.HOUR.value]))
             if row_datetime in self.datetime_to_image:
                 self.datetime_to_image[row_datetime].set_track_data(row)
                 num_track_with_images += 1
@@ -220,12 +220,11 @@ class DigitalTyphoonSequence:
         :param images_root_path: str, the root path
         :return: None
         """
-        if not self.img_root:
-            self.img_root = Path(images_root_path)
+        self.img_root = Path(images_root_path)
 
     def get_images_root_path(self) -> str:
         """
         Gets the root path to the image directory
         :return: str, the root path
         """
-        return self.img_root
+        return str(self.img_root)
