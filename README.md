@@ -80,6 +80,10 @@ The dataset object is now instantiated and you can use the data in the desired f
 * Get the item at the i'th index
     ```python
     image = dataset_obj[i]    
+    image.image() # Get the image pixels in a numpy array
+    image.year()  # Get the year the image was taken  
+    image.grade() # Get the grade of the typhoon at the time of the image
+                  # For a full list of accessible image metadata, see documentation
     ```  
   
 * Split the dataset into train, test, and validation sets
