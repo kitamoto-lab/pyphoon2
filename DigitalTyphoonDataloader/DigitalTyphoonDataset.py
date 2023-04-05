@@ -124,8 +124,8 @@ class DigitalTyphoonDataset(Dataset):
             return self._get_image_from_idx(idx)
 
     def random_split(self, lengths: Sequence[Union[int, float]],
-                     generator: Optional[Generator] = default_generator,
-                     split_by=SPLIT_UNIT.SEQUENCE.value) -> List[Subset]:
+                     split_by=None,
+                     generator: Optional[Generator] = default_generator) -> List[Subset]:
         """
         Randomly split a dataset into non-overlapping new datasets of given lengths.
 
@@ -146,6 +146,8 @@ class DigitalTyphoonDataset(Dataset):
         :return: List[Subset[idx]]
         """
         _verbose_print(f"Splitting the dataset into proportions {lengths}, by {split_by}.", verbose=self.verbose)
+        if split_by is None:
+            split_by = self.split_dataset_by
 
         if not SPLIT_UNIT.has_value(split_by):
             warnings.warn(f'Split unit \'{split_by}\' is not within the list of known split units: '
@@ -157,6 +159,7 @@ class DigitalTyphoonDataset(Dataset):
         elif split_by == SPLIT_UNIT.YEAR.value:
             return self._random_split_by_year(lengths, generator=generator)
         else:  # split_by == SPLIT_UNIT.SEQUENCE.value:
+            print("splitting by sequence")
             return self._random_split_by_sequence(lengths, generator=generator)
 
     def images_from_year(self, year: str) -> List[Subset[int]]:
@@ -384,7 +387,7 @@ class DigitalTyphoonDataset(Dataset):
         return lengths
 
     def _random_split_by_year(self, lengths: Sequence[Union[int, float]],
-                              generator: Optional[Generator] = default_generator):
+                              generator: Optional[Generator] = default_generator) -> List[Subset]:
         """
         Randomly splits the dataset s.t. each bucket has close to the requested number of indices in each split.
         Images (indices) from typhoons starting in the same year are not split across different buckets. Indices within
@@ -398,13 +401,14 @@ class DigitalTyphoonDataset(Dataset):
         :param generator: Generator used for the random permutation.
         :return: List of Subset objects
         """
+        lengths = self._calculate_split_lengths(lengths)
         return_indices_sorted = [[length, i, []] for i, length in enumerate(lengths)]
         return_indices_sorted.sort(key=lambda x: x[0])
         randomized_year_list = [list(self.years_to_sequence_nums.keys())[i]
                                 for i in randperm(len(self.years_to_sequence_nums), generator=generator)]
         year_iter = 0
         for i in range(len(return_indices_sorted)):
-            while len(return_indices_sorted[i][2]) < return_indices_sorted[i][0]:
+            while year_iter < len(self.years_to_sequence_nums) and len(return_indices_sorted[i][2]) < return_indices_sorted[i][0]:
                 for seq in self.years_to_sequence_nums[randomized_year_list[year_iter]]:
                     return_indices_sorted[i][2] \
                         .extend(self.seq_indices_to_total_indices(self._get_seq_from_seq_str(seq)))
@@ -414,7 +418,7 @@ class DigitalTyphoonDataset(Dataset):
         return [Subset(self, bucket_indices) for _, _, bucket_indices in return_indices_sorted]
 
     def _random_split_by_sequence(self, lengths: Sequence[Union[int, float]],
-                                  generator: Optional[Generator] = default_generator):
+                                  generator: Optional[Generator] = default_generator) -> List[Subset]:
         """
         Randomly splits the dataset s.t. each bucket has close to the requested number of indices in each split.
         Images (indices) from a given typhoon are not split across different buckets. Indices within a seq_str
@@ -428,19 +432,25 @@ class DigitalTyphoonDataset(Dataset):
         :param generator: Generator used for the random permutation.
         :return: List of Subset objects
         """
+        lengths = self._calculate_split_lengths(lengths)
+
         return_indices_sorted = [[length, i, []] for i, length in enumerate(lengths)]
         return_indices_sorted.sort(key=lambda x: x[0])
 
         randomized_seq_indices = randperm(len(self.sequences), generator=generator)
         seq_iter = 0
+
         for i in range(len(return_indices_sorted)):
-            while len(return_indices_sorted[i][2]) < return_indices_sorted[i][0]:
-                return_indices_sorted[i][2] \
-                    .extend(self.seq_indices_to_total_indices(self.sequences[randomized_seq_indices[seq_iter]]))
+            while seq_iter < len(self.sequences) and len(return_indices_sorted[i][2]) < return_indices_sorted[i][0]:
+                sequence_obj = self.sequences[randomized_seq_indices[seq_iter]]
+                sequence_idx_to_total = self.seq_indices_to_total_indices(sequence_obj)
+                return_indices_sorted[i][2].extend(sequence_idx_to_total)
                 seq_iter += 1
 
         return_indices_sorted.sort(key=lambda x: x[1])
-        return [Subset(self, bucket_indices) for _, _, bucket_indices in return_indices_sorted]
+
+        return_list = [Subset(self, bucket_indices) for _, _, bucket_indices in return_indices_sorted]
+        return return_list
 
     def _get_seq_from_seq_str(self, seq_str: str) -> DigitalTyphoonSequence:
         """

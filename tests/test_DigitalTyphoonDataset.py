@@ -86,19 +86,73 @@ class TestDigitalTyphoonDataset(TestCase):
             if read_in_image[-1][-i-1] != last_values[-i-1]:
                 self.fail(f'Value produced was {read_in_image[-1][-i-1]}. Should be {last_values[-i-1]}')
 
-    # def test_parse_image_filename(self):
-    #     self.fail()
-    #
-    # def test_parse_track_data_filename(self):
-    #     self.fail()
-    #
-    # def test_is_image_file(self):
-    #     self.fail()
+    def test_random_split_by_frame_random_produces_nonidentical_indices(self):
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track",
+                                             "test_data_files/metadata.json",
+                                             split_dataset_by='frame',
+                                             verbose=True)
 
-    def test_random_split(self):
-        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", verbose=True)
-        test_dataset.random_split([0.7, 0.3])
-        # tests, train = random_split(test_dataset, [0, 0.7])
-        # print(len(test_dataset))
-        # print(len(tests))
-        # print(len(train))
+        bucket1_1, bucket2_1 = test_dataset.random_split([0.7, 0.3])
+        bucket1_2, bucket2_2 = test_dataset.random_split([0.7, 0.3])
+
+        i = 0
+        all_same = True
+        while i < len(bucket1_1) and i < len(bucket1_2):
+            if bucket1_1[i] != bucket1_2[i]:
+                all_same = False
+            i += 1
+
+        self.assertFalse(all_same)
+
+        bucket1_1, bucket2_1, bucket3_1= test_dataset.random_split([0.5, 0.25, 0.25])
+        bucket1_2, bucket2_2, bucket3_2 = test_dataset.random_split([0.5, 0.25, 0.25])
+
+        i = 0
+        all_same = True
+        while i < len(bucket1_1) and i < len(bucket1_2):
+            if bucket1_1[i] != bucket1_2[i]:
+                all_same = False
+            i += 1
+        self.assertFalse(all_same)
+
+        i = 0
+        while i < len(bucket2_1) and i < len(bucket2_2):
+            if bucket2_1[i] != bucket2_2[i]:
+                all_same = False
+            i += 1
+
+        self.assertFalse(all_same)
+
+
+
+
+    def test_random_split_by_sequence_no_leakage(self):
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track",
+                                             "test_data_files/metadata.json",
+                                             split_dataset_by='sequence',
+                                             verbose=True)
+        bucket1_1, bucket2_1 = test_dataset.random_split([0.7, 0.3])
+        bucket1_1_sequences = set()
+        bucket2_1_sequences = set()
+        for i in range(0, len(bucket1_1.indices)):
+            bucket1_1_sequences.add(test_dataset._find_sequence_str_from_frame_index(bucket1_1.indices[i]))
+        for i in range(0, len(bucket2_1.indices)):
+            bucket2_1_sequences.add(test_dataset._find_sequence_str_from_frame_index(bucket2_1.indices[i]))
+
+        self.assertTrue(len(bucket1_1_sequences.intersection(bucket2_1_sequences)) == 0)
+
+    def test_random_split_by_year_no_leakage(self):
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track",
+                                             "test_data_files/metadata.json",
+                                             split_dataset_by='year',
+                                             verbose=True)
+        bucket1_1, bucket2_1 = test_dataset.random_split([0.7, 0.3])
+        bucket1_1_years = set()
+        bucket2_1_years = set()
+        for i in range(0, len(bucket1_1.indices)):
+            bucket1_1_years.add(test_dataset._find_sequence_str_from_frame_index(bucket1_1.indices[i]))
+        for i in range(0, len(bucket2_1.indices)):
+            bucket2_1_years.add(test_dataset._find_sequence_str_from_frame_index(bucket2_1.indices[i]))
+
+        self.assertTrue(len(bucket1_1_years.intersection(bucket2_1_years)) == 0)
+
