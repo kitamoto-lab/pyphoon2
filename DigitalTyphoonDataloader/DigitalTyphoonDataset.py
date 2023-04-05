@@ -106,14 +106,15 @@ class DigitalTyphoonDataset(Dataset):
 
     def __getitem__(self, idx):
         """
-        Gets an item at a particular dataset index. If "get_images_by_sequence" was set to True on initialization,
-        the idx'th seq_str is returned as a numpy array of shape
-        (num images in seq_str, shape_of_image[0], shape_of_image[1]).
+        Gets an item at a particular dataset index.
 
-        Otherwise, a single image at index idx in the total dataset is returned.
+        If "get_images_by_sequence" was set to True on initialization,
+        the idx'th sequence is returned as a list of DigitalTyphoonImages.
+
+        Otherwise, the DigitalTyphoonImage at total dataset index idx is given.
 
         :param idx: int, index of image or seq_str within total dataset
-        :return: numpy array with shape of a single image or shape of a list of images
+        :return: a List of DigitalTyphoonImages, or a single DigitalTyphoonImage
         """
         if self.get_images_by_sequence:
             seq_str = self._find_sequence_str_from_frame_index(idx)
