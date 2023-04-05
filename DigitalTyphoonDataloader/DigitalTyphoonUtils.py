@@ -3,16 +3,27 @@ from enum import Enum
 
 
 class SPLIT_UNIT(Enum):
+    """
+    Enum denoting which unit to treat as atomic when splitting the dataset
+    """
     SEQUENCE = 'sequence'
     YEAR = 'year'
     FRAME = 'frame'
 
     @classmethod
     def has_value(cls, value):
+        """
+        Returns true if value is present in the enum
+        :param value: str, the value to check for
+        :return: bool
+        """
         return value in cls._value2member_map_
 
 
 class LOAD_DATA(Enum):
+    """
+    Enum denoting what level of data should be stored in memory
+    """
     NO_DATA = False
     ONLY_TRACK = 'track'
     ONLY_IMG = 'images'
@@ -24,6 +35,9 @@ class LOAD_DATA(Enum):
 
 
 class TRACK_COLS(Enum):
+    """
+    Enum containing indices in a track csv col to find the respective data
+    """
     YEAR = 0
     MONTH = 1
     DAY = 2
@@ -43,12 +57,25 @@ class TRACK_COLS(Enum):
     INTERPOLATED = 16
 
 
-def _verbose_print(string, verbose):
+def _verbose_print(string: str, verbose: bool):
+    """
+    Prints the string if verbose is true
+    :param string: str
+    :param verbose: bool
+    :return: None
+    """
     if verbose:
         print(string)
 
 
 def parse_image_filename(filename: str, separator='-') -> (str, datetime, str):
+    """
+    Takes the filename of a Digital Typhoon image and parses it to return the date it was taken, the sequence ID
+    it belongs to, and the satellite that took the image
+    :param filename: str, filename of the image
+    :param separator: char, separator used in the filename
+    :return: (str, datetime, str), Tuple containing the sequence ID, the datetime, and satellite string
+    """
     date, sequence_num, satellite, _ = filename.split(separator)
     date_year = int(date[:4])
     date_month = int(date[4:6])
@@ -60,9 +87,19 @@ def parse_image_filename(filename: str, separator='-') -> (str, datetime, str):
 
 
 def get_seq_str_from_track_filename(filename: str) -> str:
+    """
+    Given a track filename, returns the sequence ID it belongs to
+    :param filename: str, the filename
+    :return: str, the sequence ID string
+    """
     sequence_num = filename.removesuffix(".csv")
     return sequence_num
 
 
 def is_image_file(filename: str) -> bool:
+    """
+    Given a DigitalTyphoon file, returns if it is an h5 image.
+    :param filename: str, the filename
+    :return: bool, True if it is an h5 image, False otherwise
+    """
     return filename.endswith(".h5")
