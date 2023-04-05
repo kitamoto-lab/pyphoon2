@@ -9,6 +9,8 @@ from typing import List, Sequence, Union, Optional, Dict
 
 from torch import default_generator, randperm, Generator
 from torch.utils.data import Dataset, Subset, random_split
+
+from DigitalTyphoonDataloader import DigitalTyphoonImage
 from DigitalTyphoonDataloader.DigitalTyphoonSequence import DigitalTyphoonSequence
 from DigitalTyphoonDataloader.DigitalTyphoonUtils import _verbose_print, SPLIT_UNIT, LOAD_DATA, get_seq_str_from_track_filename
 
@@ -102,7 +104,7 @@ class DigitalTyphoonDataset(Dataset):
         else:
             return self.number_of_frames
 
-    def __getitem__(self, idx) -> np.ndarray:
+    def __getitem__(self, idx):
         """
         Gets an item at a particular dataset index. If "get_images_by_sequence" was set to True on initialization,
         the idx'th seq_str is returned as a numpy array of shape
@@ -116,9 +118,9 @@ class DigitalTyphoonDataset(Dataset):
         if self.get_images_by_sequence:
             seq_str = self._find_sequence_str_from_frame_index(idx)
             seq = self._get_seq_from_seq_str(seq_str)
-            return seq.return_all_images_in_sequence_as_np()
+            return seq.get_all_images_in_sequence()
         else:
-            return self._get_image_from_idx_as_numpy(idx)
+            return self._get_image_from_idx(idx)
 
     def random_split(self, lengths: Sequence[Union[int, float]],
                      generator: Optional[Generator] = default_generator,
@@ -454,6 +456,16 @@ class DigitalTyphoonDataset(Dataset):
         :return: the sequence string ID it belongs to
         """
         return self._frame_idx_to_sequence[idx].get_sequence_str()
+
+    def _get_image_from_idx(self, idx) -> DigitalTyphoonImage:
+        """
+        Given a dataset image idx, returns the image object from that index.
+        :param idx: int, the total dataset image idx
+        :return: DigitalTyphoonImage object for that image
+        """
+        sequence_str = self._find_sequence_str_from_frame_index(idx)
+        sequence = self._get_seq_from_seq_str(sequence_str)
+        return sequence.get_image_at_idx(self.total_frame_idx_to_sequence_idx(idx))
 
     def _get_image_from_idx_as_numpy(self, idx) -> np.ndarray:
         """

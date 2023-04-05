@@ -162,6 +162,18 @@ class DigitalTyphoonSequence:
         """
         return self.track_data
 
+    def get_image_at_idx(self, idx:int, spectrum='infrared') -> DigitalTyphoonImage:
+        """
+        Returns the idx'th DigitalTyphoonImage in the sequence. raises an exception if the idx is out of the
+        the sequence's range
+        :param idx: int, idx to access
+        :param spectrum: str, spectrum of the image
+        :return: DigitalTyphoonImage, the image object
+        """
+        if idx < 0 or idx >= len(self.images):
+            raise ValueError(f'Requested idx {idx} is outside range of sequence images ({len(self.images)})')
+        return self.images[idx]
+
     def get_image_at_idx_as_numpy(self, idx: int, spectrum='infrared') -> np.ndarray:
         """
         Gets the idx'th image in the sequence as a numpy array. Raises an exception if the idx is outside of the
@@ -170,9 +182,14 @@ class DigitalTyphoonSequence:
         :param spectrum: str, spectrum of the image
         :return: np.ndarray, image as a numpy array with shape of the image dimensions
         """
-        if idx < 0 or idx >= len(self.images):
-            raise ValueError(f'Requested idx {idx} is outside range of sequence images ({len(self.images)})')
-        return self.images[idx].image()
+        return self.get_image_at_idx(idx, spectrum=spectrum).image()
+
+    def get_all_images_in_sequence(self) -> List[DigitalTyphoonImage]:
+        """
+        Returns all of the image objects (DigitalTyphoonImage) in the sequence in order.
+        :return: List[DigitalTyphoonImage]
+        """
+        return self.images
 
     def return_all_images_in_sequence_as_np(self, spectrum='infrared') -> np.ndarray:
         """
