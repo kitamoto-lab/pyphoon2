@@ -87,7 +87,7 @@ class TestDigitalTyphoonDataset(TestCase):
                 self.fail(f'Value produced was {read_in_image[-1][-i-1]}. Should be {last_values[-i-1]}')
 
     def test_random_split_by_frame_random_produces_nonidentical_indices(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
                                              "test_data_files/metadata.json",
                                              split_dataset_by='frame',
                                              verbose=True)
@@ -124,10 +124,8 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertFalse(all_same)
 
 
-
-
     def test_random_split_by_sequence_no_leakage(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
                                              "test_data_files/metadata.json",
                                              split_dataset_by='sequence',
                                              verbose=True)
@@ -142,7 +140,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertTrue(len(bucket1_1_sequences.intersection(bucket2_1_sequences)) == 0)
 
     def test_random_split_by_year_no_leakage(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
                                              "test_data_files/metadata.json",
                                              split_dataset_by='year',
                                              verbose=True)
@@ -156,4 +154,51 @@ class TestDigitalTyphoonDataset(TestCase):
 
         self.assertTrue(len(bucket1_1_years.intersection(bucket2_1_years)) == 0)
 
+    def test_ignore_filenames_should_ignore_correct_images(self):
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+                                             "test_data_files/metadata.json",
+                                             split_dataset_by='frame',
+                                             verbose=True)
+        images_to_ignore = [
+            'test_data_files/image/200801/2008041300-200801-MTS1-1.h5',
+            'test_data_files/image/200801/2008041301-200801-MTS1-1.h5',
+            'test_data_files/image/200801/2008041302-200801-MTS1-1.h5',
+            'test_data_files/image/200801/2008041303-200801-MTS1-1.h5',
+            'test_data_files/image/200801/2008041304-200801-MTS1-1.h5'
+        ]
+        images_to_ignore_set = set(images_to_ignore)
 
+        # All images are present
+        self.assertTrue(len(test_dataset) == 423)
+        image_filenames = []
+        for i in range(len(test_dataset)):
+            image_filenames.append(test_dataset[i].filepath())
+        all_image_filenames = set(image_filenames)
+        self.assertTrue(len(all_image_filenames) == 423)
+
+        # Ensure that all the to ignore images are currently present
+        self.assertEqual(5, len(images_to_ignore_set.intersection(all_image_filenames)))
+        images_to_ignore = [
+            '2008041300-200801-MTS1-1.h5',
+            '2008041301-200801-MTS1-1.h5',
+            '2008041302-200801-MTS1-1.h5',
+            '2008041303-200801-MTS1-1.h5',
+            '2008041304-200801-MTS1-1.h5'
+        ]
+        #
+        # Create new dataset ignoring those images
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+                                             "test_data_files/metadata.json",
+                                             ignore_list=images_to_ignore,
+                                             split_dataset_by='frame',
+                                             verbose=True)
+        print(len(test_dataset))
+        self.assertTrue(len(test_dataset) == 418)
+        image_filenames = []
+        for i in range(len(test_dataset)):
+            image_filenames.append(test_dataset[i].filepath())
+        all_image_filenames = set(image_filenames)
+        self.assertTrue(len(all_image_filenames) == 418)
+
+        # Ensure that all the to ignore images are not present
+        self.assertEqual(0, len(images_to_ignore_set.intersection(all_image_filenames)))

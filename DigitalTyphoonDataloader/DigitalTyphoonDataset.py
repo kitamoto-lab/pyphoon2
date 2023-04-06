@@ -78,7 +78,9 @@ class DigitalTyphoonDataset(Dataset):
                                                                #  that seq_str
 
         self.number_of_sequences = None
-        self.number_of_frames = 0  # Number of images
+        self.number_of_original_frames = 0  # Number of images in the original dataset before augmentation and removal
+        self.number_of_frames = 0  # number of images in the dataset, after augmentation and removal
+
 
         # Year to list of sequences that start in that year
         self.years_to_sequence_nums: OrderedDict[str, List[str]] = OrderedDict()
@@ -92,6 +94,9 @@ class DigitalTyphoonDataset(Dataset):
 
         _verbose_print(f'Initializing track data from: {track_dir}', self.verbose)
         self._populate_track_data_into_sequences(self.track_dir)
+
+        _verbose_print(f'Indexing the dataset', verbose=self.verbose)
+        self._assign_all_images_a_dataset_idx()
 
     def __len__(self) -> int:
         """
@@ -160,7 +165,6 @@ class DigitalTyphoonDataset(Dataset):
         elif split_by == SPLIT_UNIT.YEAR.value:
             return self._random_split_by_year(lengths, generator=generator)
         else:  # split_by == SPLIT_UNIT.SEQUENCE.value:
-            print("splitting by sequence")
             return self._random_split_by_sequence(lengths, generator=generator)
 
     def images_from_year(self, year: str) -> List[Subset[int]]:
@@ -212,9 +216,8 @@ class DigitalTyphoonDataset(Dataset):
             data = json.load(f)
         self.number_of_sequences = len(data)
 
-        prev_interval_end = -1
         for sequence_str, metadata in data.items():
-            prev_interval_end = self._read_one_seq_from_metadata(sequence_str, metadata, prev_interval_end)
+            self._read_one_seq_from_metadata(sequence_str, metadata)
 
     def get_all_seq_str_from_start_year(self, year: str) -> List[str]:
         """
@@ -235,7 +238,7 @@ class DigitalTyphoonDataset(Dataset):
         """
         sequence = self._frame_idx_to_sequence[total_idx]
         start_idx = self._seq_str_to_first_total_idx[sequence.get_sequence_str()]
-        if total_idx >= self.number_of_frames:
+        if total_idx >= self.number_of_original_frames:
             raise ValueError(f'Frame {total_idx} is beyond the number of frames in the dataset.')
         return total_idx - start_idx
 
@@ -280,11 +283,13 @@ class DigitalTyphoonDataset(Dataset):
             for dir_name in sorted(dirs):  # Read sequences in chronological order, not necessary but convenient
                 sequence_obj = self._get_seq_from_seq_str(dir_name)
                 sequence_obj.process_seq_img_dir_into_sequence(root+dir_name, load_into_mem, ignore_list=self.ignore_list)
+                self.number_of_frames += sequence_obj.get_num_images()
 
         for sequence in self.sequences:
             if not sequence.num_images_match_num_frames():
-                warnings.warn(f'Sequence {sequence.sequence_str} has only {sequence.get_num_images()} when '
-                              f'it should have {sequence.num_frames}. If this is intended, ignore this warning.')
+                if self.verbose:
+                    warnings.warn(f'Sequence {sequence.sequence_str} has only {sequence.get_num_images()} when '
+                                  f'it should have {sequence.num_frames}. If this is intended, ignore this warning.')
 
     def _populate_track_data_into_sequences(self, track_dir: str) -> None:
         """
@@ -301,14 +306,13 @@ class DigitalTyphoonDataset(Dataset):
                     self._read_in_track_file_to_sequence(file_sequence, root + file)
 
     def _read_one_seq_from_metadata(self, sequence_str: str,
-                                    metadata_json: Dict,
-                                    prev_interval_end: int) -> int:
+                                    metadata_json: Dict):
         """
         Processes one seq_str from the metadata JSON object.
         :param sequence_str: string of the seq_str ID
         :param metadata_json: JSON object from metadata file
         :param prev_interval_end: the final image index of the previous seq_str
-        :return: the final image index of the created seq_str
+        :return: None
         """
         seq_start_date = datetime.strptime(metadata_json['start'], '%Y-%m-%d')
 
@@ -318,17 +322,24 @@ class DigitalTyphoonDataset(Dataset):
                                                      verbose=self.verbose))
         self._sequence_str_to_seq_idx[sequence_str] = len(self.sequences) - 1
 
-        frame_interval = (prev_interval_end + 1, prev_interval_end + metadata_json['frames'])  # frame ends inclusive
-        for i in range(frame_interval[0], frame_interval[1] + 1):
-            self._frame_idx_to_sequence[i] = self.sequences[-1]
-            self._seq_str_to_first_total_idx[sequence_str] = frame_interval[0]
-
         if metadata_json['year'] not in self.years_to_sequence_nums:
             self.years_to_sequence_nums[metadata_json['year']] = []
         self.years_to_sequence_nums[metadata_json['year']].append(sequence_str)
-        self.number_of_frames += metadata_json['frames']
+        self.number_of_original_frames += metadata_json['frames']
 
-        return frame_interval[1]
+
+    def _assign_all_images_a_dataset_idx(self):
+        """
+        Iterates through the sequences and assigns each image (AFTER adding and removing images to the sequences, i.e.
+        not the number of original frames stated in the metadata.json) an index within the total dataset.
+        :return: None
+        """
+        dataset_idx_iter = 0
+        for sequence in self.sequences:
+            self._seq_str_to_first_total_idx[sequence.get_sequence_str()] = dataset_idx_iter
+            for idx in range(sequence.get_num_images()):
+                self._frame_idx_to_sequence[dataset_idx_iter] = sequence
+                dataset_idx_iter += 1
 
     def _read_in_track_file_to_sequence(self, seq_str: str, file: str, csv_delimiter=',') -> DigitalTyphoonSequence:
         """
@@ -502,4 +513,4 @@ class DigitalTyphoonDataset(Dataset):
         self.years_to_sequence_nums: OrderedDict[str, List[str]] = OrderedDict()
 
         self.number_of_sequences = None
-        self.number_of_frames = 0
+        self.number_of_original_frames = 0

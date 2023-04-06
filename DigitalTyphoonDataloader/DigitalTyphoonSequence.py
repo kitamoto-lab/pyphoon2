@@ -67,14 +67,12 @@ class DigitalTyphoonSequence:
             filepaths = [(file,) + parse_image_filename(file) for file in files if is_image_file(file)]
             filepaths.sort(key=lambda x: x[2])  # sort by datetime
             for filepath, file_sequence, file_date, file_satellite in filepaths:
-                if filepath in ignore_list:
-                    continue
-
-                image_obj = DigitalTyphoonImage(self.img_root / filepath, None,
-                                                load_imgs_into_mem=load_imgs_into_mem,
-                                                spectrum=spectrum)
-                self.images.append(image_obj)
-                self.datetime_to_image[file_date] = image_obj
+                if filepath not in ignore_list:
+                    image_obj = DigitalTyphoonImage(self.img_root / filepath, None,
+                                                    load_imgs_into_mem=load_imgs_into_mem,
+                                                    spectrum=spectrum)
+                    self.images.append(image_obj)
+                    self.datetime_to_image[file_date] = image_obj
 
         if not self.num_images_match_num_frames():
             warnings.warn(f'The number of images ({len(self.images)}) does not match the '
