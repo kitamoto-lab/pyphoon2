@@ -21,7 +21,7 @@ class DigitalTyphoonDataset(Dataset):
                  image_dir: str,
                  track_dir: str,
                  metadata_filepath: str,
-                 split_dataset_by='sequence',  # can be [sequence, year, frame]
+                 split_dataset_by='frame',  # can be [sequence, year, frame]
                  get_images_by_sequence=False,
                  load_data_into_memory=False,
                  ignore_list=None,
@@ -72,18 +72,19 @@ class DigitalTyphoonDataset(Dataset):
 
         # Structures holding the data objects
         self.sequences: List[DigitalTyphoonSequence] = list()  # List of seq_str objects
+                                                                # contains sequences in order they are present in metadata.json
         self._sequence_str_to_seq_idx: Dict[str, int] = {}  # Sequence ID to idx in sequences array
         self._frame_idx_to_sequence: Dict[int, DigitalTyphoonSequence] = {}  # Image idx to what seq_str it belongs to
         self._seq_str_to_first_total_idx: Dict[str, int] = {}  # Sequence string to the first total idx belonging to
                                                                #  that seq_str
 
-        self.number_of_sequences = None
+        self.number_of_sequences = 0
         self.number_of_original_frames = 0  # Number of images in the original dataset before augmentation and removal
         self.number_of_frames = 0  # number of images in the dataset, after augmentation and removal
 
 
         # Year to list of sequences that start in that year
-        self.years_to_sequence_nums: OrderedDict[str, List[str]] = OrderedDict()
+        self.years_to_sequence_nums: OrderedDict[int, List[str]] = OrderedDict()
 
         # Process the data into the loader
         _verbose_print(f'Processing metadata file at: {metadata_filepath}', self.verbose)
@@ -167,7 +168,7 @@ class DigitalTyphoonDataset(Dataset):
         else:  # split_by == SPLIT_UNIT.SEQUENCE.value:
             return self._random_split_by_sequence(lengths, generator=generator)
 
-    def images_from_year(self, year: str) -> List[Subset[int]]:
+    def images_from_year(self, year: int) -> List[Subset]:
         """
         Given a start year, return the total dataset image indices of the images from the sequences starting in
         the specified year. Returns it as a List of Subsets, where one inner list represents one sequence.
@@ -181,7 +182,7 @@ class DigitalTyphoonDataset(Dataset):
             return_list.append(Subset(self, self.seq_indices_to_total_indices(seq_obj)))
         return return_list
 
-    def images_from_sequence(self, sequence_str: str) -> Subset[int]:
+    def images_from_sequence(self, sequence_str: str) -> Subset:
         """
         Given a sequence ID, returns a Subset of the dataset of the images in that sequence
         :param sequence_str: str, the sequence ID
@@ -326,7 +327,6 @@ class DigitalTyphoonDataset(Dataset):
             self.years_to_sequence_nums[metadata_json['year']] = []
         self.years_to_sequence_nums[metadata_json['year']].append(sequence_str)
         self.number_of_original_frames += metadata_json['frames']
-
 
     def _assign_all_images_a_dataset_idx(self):
         """
@@ -512,5 +512,6 @@ class DigitalTyphoonDataset(Dataset):
                                                                #  that seq_str
         self.years_to_sequence_nums: OrderedDict[str, List[str]] = OrderedDict()
 
-        self.number_of_sequences = None
+        self.number_of_sequences = 0
         self.number_of_original_frames = 0
+        self.number_of_frames = 0

@@ -34,5 +34,14 @@
     "name":"FITOW",
     "year":2013,
     "number":23
+  },
+  "202222":{
+    "number":22,
+    "year":2022,
+    "name":"NALGAE",
+    "id":"202222",
+    "start":"2022-10-26",
+    "frames":5,
+    "end":"2022-11-03"
   }
 }
