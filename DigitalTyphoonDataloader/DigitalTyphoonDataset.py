@@ -265,6 +265,13 @@ class DigitalTyphoonDataset(Dataset):
         seq_str = seq_obj.get_sequence_str()
         return [i + self._seq_str_to_first_total_idx[seq_str] for i in range(seq_obj.get_num_images())]
 
+    def get_list_of_years(self) -> List[int]:
+        """
+        Returns a list of the years that typhoons have started in chronological order
+        :return: List[int]
+        """
+        return sorted([int(year) for year in self.years_to_sequence_nums.keys()])
+
     def _get_list_of_sequence_objs(self) -> List[DigitalTyphoonSequence]:
         """
         Gives list of seq_str objects

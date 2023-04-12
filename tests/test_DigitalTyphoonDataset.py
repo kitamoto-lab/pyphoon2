@@ -332,6 +332,15 @@ class TestDigitalTyphoonDataset(TestCase):
         for seq in seq_strs:
             self.assertEqual(seq, test_dataset._get_seq_from_seq_str(seq).get_sequence_str())
 
+    def test_get_list_of_years(self):
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+                                             "test_data_files/metadata.json",
+                                             split_dataset_by='frame',
+                                             verbose=False)
+        year_list = [1979, 2008, 2013, 2022]
+        dataset_year_list = test_dataset.get_list_of_years()
+        self.assertEqual(year_list, dataset_year_list)
+
     def test_find_seq_str_from_frame(self):
         test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
                                              "test_data_files/metadata.json",
