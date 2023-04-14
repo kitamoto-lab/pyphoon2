@@ -148,7 +148,8 @@ class DigitalTyphoonDataset(Dataset):
 
         :param lengths: lengths or fractions of splits to be produced
         :param generator: Generator used for the random permutation.
-        :param split_by: What to treat as an atomic unit (image, seq_str, year)
+        :param split_by: What to treat as an atomic unit (image, seq_str, year). Options are
+                         "frame", "sequence" or "year" respectively
         :return: List[Subset[idx]]
         """
         if split_by is None:
