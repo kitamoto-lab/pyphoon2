@@ -7,12 +7,13 @@ from datetime import datetime
 from collections import OrderedDict
 from typing import List, Sequence, Union, Optional, Dict
 
+import torch
 from torch import default_generator, randperm, Generator
 from torch.utils.data import Dataset, Subset, random_split
 
 from DigitalTyphoonDataloader import DigitalTyphoonImage
 from DigitalTyphoonDataloader.DigitalTyphoonSequence import DigitalTyphoonSequence
-from DigitalTyphoonDataloader.DigitalTyphoonUtils import _verbose_print, SPLIT_UNIT, LOAD_DATA, get_seq_str_from_track_filename
+from DigitalTyphoonDataloader.DigitalTyphoonUtils import _verbose_print, SPLIT_UNIT, LOAD_DATA, TRACK_COLS, get_seq_str_from_track_filename
 
 
 class DigitalTyphoonDataset(Dataset):
@@ -192,6 +193,26 @@ class DigitalTyphoonDataset(Dataset):
         seq_object = self._get_seq_from_seq_str(sequence_str)
         indices = self.seq_indices_to_total_indices(seq_object)
         return Subset(self, indices)
+
+    def images_as_tensor(self, indices: List[int]) -> torch.Tensor:
+        """
+        Given a list of dataset indices, returns the images as a Torch Tensor
+        :param indices: List[int]
+        :return: torch Tensor
+        """
+        images = [self._get_image_from_idx(idx).image() for idx in indices]
+        return torch.Tensor(images)
+
+    def labels_as_tensor(self, indices: List[int], label: str) -> torch.Tensor:
+        """
+        Given a list of dataset indices, returns the specified labels as a Torch Tensor
+        :param indices: List[int]
+        :param label: str, denoting which label to retrieve
+        :return: torch Tensor
+        """
+        label_idx = TRACK_COLS.str_to_value(label)
+        images = [self._get_image_from_idx(idx).track_data[label_idx] for idx in indices]
+        return torch.Tensor(images)
 
     def get_number_of_sequences(self):
         """

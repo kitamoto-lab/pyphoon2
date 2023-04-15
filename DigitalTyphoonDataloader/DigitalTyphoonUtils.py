@@ -56,6 +56,50 @@ class TRACK_COLS(Enum):
     LANDFALL = 15
     INTERPOLATED = 16
 
+    @classmethod
+    def str_to_value(cls, name):
+        if name == 'year':
+            return TRACK_COLS.YEAR.value
+        elif name == 'month':
+            return TRACK_COLS.MONTH.value
+        elif name == 'day':
+            return TRACK_COLS.DAY.value
+        elif name == 'hour':
+            return TRACK_COLS.HOUR.value
+        elif name == 'grade':
+            return TRACK_COLS.GRADE.value
+        elif name == 'lat':
+            return TRACK_COLS.LAT.value
+        elif name == 'lng':
+            return TRACK_COLS.LNG.value
+        elif name == 'pressure':
+            return TRACK_COLS.PRESSURE.value
+        elif name == 'wind':
+            return TRACK_COLS.WIND.value
+        elif name == 'dir50':
+            return TRACK_COLS.DIR50.value
+        elif name == 'long50':
+            return TRACK_COLS.LONG50.value
+        elif name == 'short50':
+            return TRACK_COLS.SHORT50.value
+        elif name == 'dir30':
+            return TRACK_COLS.DIR30.value
+        elif name == 'long30':
+            return TRACK_COLS.LONG30.value
+        elif name == 'short30':
+            return TRACK_COLS.SHORT30.value
+        elif name == 'landfall':
+            return TRACK_COLS.LANDFALL.value
+        elif name == 'interpolated':
+            return TRACK_COLS.INTERPOLATED.value
+        else:
+            raise ValueError(f"{name} is not a valid column name.")
+
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
+
 
 def _verbose_print(string: str, verbose: bool):
     """

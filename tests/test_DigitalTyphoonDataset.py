@@ -1,6 +1,8 @@
 import os.path
 from unittest import TestCase
 
+import torch
+
 from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
 from DigitalTyphoonDataloader.DigitalTyphoonSequence import DigitalTyphoonSequence
 from DigitalTyphoonDataloader.DigitalTyphoonUtils import parse_image_filename
@@ -256,6 +258,35 @@ class TestDigitalTyphoonDataset(TestCase):
         seq_images_paths = [image.filepath() for image in seq_images]
         self.assertEqual(filenames, set(seq_images_paths))
         self.assertEqual(len(filenames), len(seq_images_paths))
+
+    def test_images_as_tensor(self):
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+                                             "test_data_files/metadata.json",
+                                             split_dataset_by='frame',
+                                             verbose=False)
+
+        img_1 = test_dataset[0].image()
+        img_2 = test_dataset[5].image()
+        img_3 = test_dataset[15].image()
+        should_be = torch.Tensor([img_1, img_2, img_3])
+
+        img_tensor = test_dataset.images_as_tensor([0, 5, 15])
+        print(img_tensor.size())
+        self.assertTrue(torch.equal(img_tensor, should_be))
+
+    def test_images_as_tensor(self):
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+                                             "test_data_files/metadata.json",
+                                             split_dataset_by='frame',
+                                             verbose=False)
+
+        label_1 = test_dataset[0].grade()
+        label_2 = test_dataset[5].grade()
+        label_3 = test_dataset[40].grade()
+        should_be = torch.Tensor([label_1, label_2, label_3])
+        label_tensor = test_dataset.labels_as_tensor([0, 5, 40], 'grade')
+        self.assertTrue(torch.equal(label_tensor, should_be))
+
 
     def test_get_num_sequences(self):
         test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
