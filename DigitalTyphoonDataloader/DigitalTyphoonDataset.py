@@ -200,7 +200,7 @@ class DigitalTyphoonDataset(Dataset):
         :param indices: List[int]
         :return: torch Tensor
         """
-        images = [self._get_image_from_idx(idx).image() for idx in indices]
+        images = np.array([self._get_image_from_idx(idx).image() for idx in indices])
         return torch.Tensor(images)
 
     def labels_as_tensor(self, indices: List[int], label: str) -> torch.Tensor:
