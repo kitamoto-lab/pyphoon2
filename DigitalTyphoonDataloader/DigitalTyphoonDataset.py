@@ -210,8 +210,7 @@ class DigitalTyphoonDataset(Dataset):
         :param label: str, denoting which label to retrieve
         :return: torch Tensor
         """
-        label_idx = TRACK_COLS.str_to_value(label)
-        images = [self._get_image_from_idx(idx).track_data[label_idx] for idx in indices]
+        images = [self._get_image_from_idx(idx).value_from_string(label) for idx in indices]
         return torch.Tensor(images)
 
     def get_number_of_sequences(self):

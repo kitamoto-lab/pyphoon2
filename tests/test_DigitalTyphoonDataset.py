@@ -210,7 +210,6 @@ class TestDigitalTyphoonDataset(TestCase):
                                              ignore_list=images_to_ignore,
                                              split_dataset_by='frame',
                                              verbose=False)
-        print(len(test_dataset))
         self.assertTrue(len(test_dataset) == 423)
         image_filenames = []
         for i in range(len(test_dataset)):
@@ -271,7 +270,6 @@ class TestDigitalTyphoonDataset(TestCase):
         should_be = torch.Tensor([img_1, img_2, img_3])
 
         img_tensor = test_dataset.images_as_tensor([0, 5, 15])
-        print(img_tensor.size())
         self.assertTrue(torch.equal(img_tensor, should_be))
 
     def test_images_as_tensor(self):

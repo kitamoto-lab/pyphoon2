@@ -54,6 +54,10 @@ class DigitalTyphoonImage:
         """
         return self.track_data
 
+    def value_from_string(self, label):
+        label_name = TRACK_COLS.str_to_value(label)
+        return self.track_array()[label_name]
+
     def year(self) -> int:
         """
         Returns the year the image was taken
