@@ -26,6 +26,7 @@ class DigitalTyphoonDataset(Dataset):
                  get_images_by_sequence=False,
                  load_data_into_memory=False,
                  ignore_list=None,
+                 filter_func=None,
                  verbose=False) -> None:
         """
         Dataloader for the DigitalTyphoon dataset.
@@ -40,6 +41,8 @@ class DigitalTyphoonDataset(Dataset):
                                         memory. Options are "track" (only track data), "images" (only images), or
                                         "all_data" (both track and images).
         :param ignore_list: a list of filenames (not path) to ignore and NOT add to the dataset
+        :param filter_func: a function used to filter out images from the dataset. Should accept an DigitalTyphoonImage object
+                       and return a bool True or False if it should be included in the dataset
         :param verbose: Print verbose program information
         """
 
@@ -70,6 +73,10 @@ class DigitalTyphoonDataset(Dataset):
 
         # Set of image filepaths to ignore
         self.ignore_list = set(ignore_list) if ignore_list else set([])
+        if filter_func:
+            self.filter = filter_func
+        else:
+            self.filter = lambda img: True
 
         # Structures holding the data objects
         self.sequences: List[DigitalTyphoonSequence] = list()  # List of seq_str objects
@@ -88,14 +95,15 @@ class DigitalTyphoonDataset(Dataset):
         self.years_to_sequence_nums: OrderedDict[int, List[str]] = OrderedDict()
 
         # Process the data into the loader
+        # It must happen in this order!
         _verbose_print(f'Processing metadata file at: {metadata_filepath}', self.verbose)
         self.process_metadata_file(metadata_filepath)
 
-        _verbose_print(f'Initializing image_arrays from: {image_dir}', self.verbose)
-        self._populate_images_into_sequences(self.image_dir)
-
         _verbose_print(f'Initializing track data from: {track_dir}', self.verbose)
         self._populate_track_data_into_sequences(self.track_dir)
+
+        _verbose_print(f'Initializing image_arrays from: {image_dir}', self.verbose)
+        self._populate_images_into_sequences(self.image_dir)
 
         _verbose_print(f'Indexing the dataset', verbose=self.verbose)
         self._assign_all_images_a_dataset_idx()
@@ -311,7 +319,7 @@ class DigitalTyphoonDataset(Dataset):
         for root, dirs, files in os.walk(image_dir, topdown=True):
             for dir_name in sorted(dirs):  # Read sequences in chronological order, not necessary but convenient
                 sequence_obj = self._get_seq_from_seq_str(dir_name)
-                sequence_obj.process_seq_img_dir_into_sequence(root+dir_name, load_into_mem, ignore_list=self.ignore_list)
+                sequence_obj.process_seq_img_dir_into_sequence(root+dir_name, load_into_mem, ignore_list=self.ignore_list, filter_func=self.filter)
                 self.number_of_frames += sequence_obj.get_num_images()
 
         for sequence in self.sequences:
@@ -327,7 +335,7 @@ class DigitalTyphoonDataset(Dataset):
         :return: None
         """
         for root, dirs, files in os.walk(track_dir, topdown=True):
-            for file in files:
+            for file in sorted(files):
                 file_sequence = get_seq_str_from_track_filename(file)
                 if self.sequence_exists(file_sequence):
                     self._get_seq_from_seq_str(file_sequence).set_track_path(root + file)

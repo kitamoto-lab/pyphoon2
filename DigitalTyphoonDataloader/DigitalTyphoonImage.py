@@ -25,9 +25,8 @@ class DigitalTyphoonImage:
 
         self.image_filepath = image_filepath
         self.image_array = None
-
-        if self.load_imgs_into_mem:
-            self.image()  # Load the image on instantiation if load_imgs_into_mem is set to True
+        if image_filepath is not None:
+            self.set_image_data(image_filepath)
 
         self.track_data = track_entry
         if track_entry is not None:
@@ -191,16 +190,6 @@ class DigitalTyphoonImage:
         """
         return str(self.image_filepath)
 
-    def _get_h5_image_as_numpy(self, spectrum='infrared') -> np.ndarray:
-        """
-        Given an h5 image filepath, open and return the image as a numpy array
-        :param spectrum: str, the spectrum of the image
-        :return: np.ndarray, image as a numpy array with shape of the image dimensions
-        """
-        with h5py.File(self.image_filepath, 'r') as h5f:
-            image = np.array(h5f.get(spectrum))
-        return image
-
     def set_track_data(self, track_entry: np.ndarray) -> None:
         """
         Sets the track entry
@@ -211,3 +200,28 @@ class DigitalTyphoonImage:
             raise ValueError(f'Number of columns in the track entry ({len(track_entry)}) is not equal '
                              f'to expected amount ({len(TRACK_COLS)})')
         self.track_data = track_entry
+
+    def set_image_data(self, image_filepath: str, load_images_into_mem: bool=False, spectrum: str='infrared') -> None:
+        """
+        Sets the image file data
+        :param load_images_into_mem: bool, whether to load images into memory
+        :param spectrum: str, spectrum to open h5 images with
+        :param image_filepath: string to image
+        :return: None
+        """
+        self.load_imgs_into_mem = load_images_into_mem
+        self.spectrum = spectrum
+
+        self.image_filepath = image_filepath
+        if self.load_imgs_into_mem:
+            self.image()  # Load the image on instantiation if load_imgs_into_mem is set to True
+
+    def _get_h5_image_as_numpy(self, spectrum='infrared') -> np.ndarray:
+        """
+        Given an h5 image filepath, open and return the image as a numpy array
+        :param spectrum: str, the spectrum of the image
+        :return: np.ndarray, image as a numpy array with shape of the image dimensions
+        """
+        with h5py.File(self.image_filepath, 'r') as h5f:
+            image = np.array(h5f.get(spectrum))
+        return image

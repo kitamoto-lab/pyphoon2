@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 from typing import List, Dict
 import pandas as pd
+from collections import OrderedDict
 
 from DigitalTyphoonDataloader.DigitalTyphoonImage import DigitalTyphoonImage
 from DigitalTyphoonDataloader.DigitalTyphoonUtils import parse_image_filename, is_image_file, TRACK_COLS
@@ -25,6 +26,7 @@ class DigitalTyphoonSequence:
 
         self.sequence_str = seq_str  # sequence ID string
         self.year = start_year
+        self.num_track_entries = 0
         self.num_frames = num_frames
         self.track_data = np.array([])
         self.img_root = None  # root path to directory containing image files
@@ -48,7 +50,8 @@ class DigitalTyphoonSequence:
     def process_seq_img_dir_into_sequence(self, directory_path: str,
                                           load_imgs_into_mem=False,
                                           ignore_list=None,
-                                          spectrum='infrared') -> None:
+                                          spectrum='infrared',
+                                          filter_func=lambda img: True) -> None:
         """
         Given a path to a directory containing images of a typhoon sequence, process the images into the current
         sequence object. If 'load_imgs_into_mem' is set to True, the images will be read as numpy arrays and stored in
@@ -56,7 +59,9 @@ class DigitalTyphoonSequence:
 
         :param directory_path: Path to the typhoon sequence directory
         :param load_imgs_into_mem: Bool representing if images should be loaded into memory
+        :param ignore_list: list of image filenames to ignore
         :param spectrum: string representing what spectrum the image lies in
+        :param filter_func: function that accepts an image and returns True or False if it should be included in the sequence
         :return: None
         """
         if ignore_list is None:
@@ -68,15 +73,19 @@ class DigitalTyphoonSequence:
             filepaths.sort(key=lambda x: x[2])  # sort by datetime
             for filepath, file_sequence, file_date, file_satellite in filepaths:
                 if filepath not in ignore_list:
-                    image_obj = DigitalTyphoonImage(self.img_root / filepath, None,
-                                                    load_imgs_into_mem=load_imgs_into_mem,
-                                                    spectrum=spectrum)
-                    self.images.append(image_obj)
-                    self.datetime_to_image[file_date] = image_obj
+                    self.datetime_to_image[file_date].set_image_data(self.img_root / filepath,
+                                                                     load_images_into_mem=load_imgs_into_mem,
+                                                                     spectrum=spectrum)
+                    if filter_func(self.datetime_to_image[file_date]):
+                        self.images.append(self.datetime_to_image[file_date])
 
-        if not self.num_images_match_num_frames():
-            warnings.warn(f'The number of images ({len(self.images)}) does not match the '
-                          f'number of expected frames ({self.num_frames}). If this is expected, ignore this warning.')
+        if self.verbose:
+            if not self.num_images_match_num_frames():
+                warnings.warn(f'The number of images ({len(self.images)}) does not match the '
+                              f'number of expected frames ({self.num_frames}). If this is expected, ignore this warning.')
+
+            if len(self.images) < self.num_track_entries:
+                warnings.warn(f'Only {len(self.images)} of {self.num_track_entries} track entries have images.')
 
     def get_start_year(self) -> int:
         """
@@ -115,18 +124,11 @@ class DigitalTyphoonSequence:
         """
         df = pd.read_csv(track_filepath, delimiter=csv_delimiter)
         data = df.to_numpy()
-        total_num_track = len(data)
-        num_track_with_images = 0
         for row in data:
             row_datetime = datetime(int(row[TRACK_COLS.YEAR.value]), int(row[TRACK_COLS.MONTH.value]),
                                     int(row[TRACK_COLS.DAY.value]), int(row[TRACK_COLS.HOUR.value]))
-            if row_datetime in self.datetime_to_image:
-                self.datetime_to_image[row_datetime].set_track_data(row)
-                num_track_with_images += 1
-
-        if self.verbose:
-            if num_track_with_images < total_num_track:
-                warnings.warn(f'Only {num_track_with_images} of {total_num_track} track entries have images.')
+            self.datetime_to_image[row_datetime] = DigitalTyphoonImage(None, row)
+            self.num_track_entries += 1
 
     def add_track_data(self, filename: str, csv_delimiter=',') -> None:
         """

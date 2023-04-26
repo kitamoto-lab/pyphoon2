@@ -7,7 +7,6 @@ from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
 from DigitalTyphoonDataloader.DigitalTyphoonSequence import DigitalTyphoonSequence
 from DigitalTyphoonDataloader.DigitalTyphoonUtils import parse_image_filename
 
-
 class TestDigitalTyphoonDataset(TestCase):
     def test__initialize_and_populate_images_into_sequences(self):
         # tests process_metadata_file, populate_images_into_sequences, _populate_track_data_into_sequences, and
@@ -73,6 +72,7 @@ class TestDigitalTyphoonDataset(TestCase):
             for i in range(0, len(datelist)):
                 if datelist[i] != sorted_datelist[i]:
                     self.fail(f'Sequence \'{sequence.get_sequence_str()}\' was not read in chronological order.')
+
 
     def test__populate_track_data_into_sequences(self):
         test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/track/',
