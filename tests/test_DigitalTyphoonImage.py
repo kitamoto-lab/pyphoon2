@@ -9,17 +9,17 @@ from DigitalTyphoonDataloader.DigitalTyphoonImage import DigitalTyphoonImage
 class TestDigitalTyphoonImage(TestCase):
     def test_initialization_should_succeed(self):
         test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041300-200801-MTS1-1.h5',
-                                         np.array([]))
+                                         np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]))
 
     def test_initialization_load_image_into_memory_should_fail(self):
         with self.assertRaises(FileNotFoundError):
             test_image = DigitalTyphoonImage('nonexistent/file',
-                                             np.array([]),
+                                             np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
                                              load_imgs_into_mem=True)
 
     def test_initialization_load_image_into_memory_should_succeed(self):
         test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
-                                         np.array([]),
+                                         np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
                                          load_imgs_into_mem=True)
 
         read_in_image = test_image.image()

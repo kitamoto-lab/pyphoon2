@@ -22,6 +22,7 @@ class DigitalTyphoonDataset(Dataset):
                  image_dir: str,
                  track_dir: str,
                  metadata_filepath: str,
+                 labels,
                  split_dataset_by='frame',  # can be [sequence, year, frame]
                  get_images_by_sequence=False,
                  load_data_into_memory=False,
@@ -69,6 +70,11 @@ class DigitalTyphoonDataset(Dataset):
 
         # Path to the metadata file
         self.metadata_filepath = metadata_filepath
+
+        # labels to retrieve when accessing the dataset
+        self.labels = None
+        self.set_label(labels)
+
         self.verbose = verbose
 
         # Set of image filepaths to ignore
@@ -86,10 +92,11 @@ class DigitalTyphoonDataset(Dataset):
         self._seq_str_to_first_total_idx: Dict[str, int] = {}  # Sequence string to the first total idx belonging to
                                                                #  that seq_str
 
+        self.label = ('grade', 'lat')
+
         self.number_of_sequences = 0
         self.number_of_original_frames = 0  # Number of images in the original dataset before augmentation and removal
         self.number_of_frames = 0  # number of images in the dataset, after augmentation and removal
-
 
         # Year to list of sequences that start in that year
         self.years_to_sequence_nums: OrderedDict[int, List[str]] = OrderedDict()
@@ -121,22 +128,49 @@ class DigitalTyphoonDataset(Dataset):
 
     def __getitem__(self, idx):
         """
-        Gets an item at a particular dataset index.
+        Gets an image and its label at a particular dataset index.
 
         If "get_images_by_sequence" was set to True on initialization,
-        the idx'th sequence is returned as a list of DigitalTyphoonImages.
+        the idx'th sequence is returned as a np array of the image arrays.
 
-        Otherwise, the DigitalTyphoonImage at total dataset index idx is given.
+        Otherwise, the single image np array is given.
+
+        Returns a tuple with the image array in the first position, and the label in the second.
+
+        The label will take on the shape of desired labels specified in the class attribute.
+        e.g. if the dataset was instantiated with labels='grade', dataset[0] will return image, grade
+             If the dataset was instantiated with labels=('lat', 'lng') dataset[0] will return image, [lat, lng]
 
         :param idx: int, index of image or seq_str within total dataset
-        :return: a List of DigitalTyphoonImages, or a single DigitalTyphoonImage
+        :return: a List of image arrays and labels, or single image and labels
         """
         if self.get_images_by_sequence:
             seq_str = self._find_sequence_str_from_frame_index(idx)
             seq = self._get_seq_from_seq_str(seq_str)
-            return seq.get_all_images_in_sequence()
+            images = seq.get_all_images_in_sequence()
+            image_arrays = np.array([image.image() for image in images])
+            labels = np.array([self._labels_from_label_strs(image, self.labels) for image in images])
+            return image_arrays, labels
         else:
-            return self._get_image_from_idx(idx)
+            image = self.get_image_from_idx(idx)
+            labels = self._labels_from_label_strs(image, self.labels)
+            return image.image(), labels
+
+    def set_label(self, label_strs) -> None:
+        """
+        Sets what label to retrieve when accessing the data set via dataset[idx] or dataset.__getitem__(idx)
+        Options are:
+            year, month, day, hour, grade, lat, lng, pressure, wind, dir50, long50, short50,
+            dir30, long30, short30, landfall, interpolated
+        :param label_strs: a single string (e.g. 'grade') or a list/tuple of strings (e.g. ['lat', 'lng']) of labels.
+        :return: None
+        """
+        if (type(label_strs) is list) or (type(label_strs) is tuple):
+            for label in label_strs:
+                TRACK_COLS.str_to_value(label)  # For error checking
+        else:
+            TRACK_COLS.str_to_value(label_strs)  # For error checking
+        self.labels = label_strs
 
     def random_split(self, lengths: Sequence[Union[int, float]],
                      split_by=None,
@@ -180,10 +214,9 @@ class DigitalTyphoonDataset(Dataset):
 
     def images_from_year(self, year: int) -> List[Subset]:
         """
-        Given a start year, return the total dataset image indices of the images from the sequences starting in
-        the specified year. Returns it as a List of Subsets, where one inner list represents one sequence.
+        Given a start year, return a list of dataset Subsets of sequences from that year. One subset refers to one sequence.
         :param year: the start year as a string
-        :return: the List of Lists of sequences and their image indices
+        :return: the List of Subsets of the years
         """
         return_list = []
         sequence_strs = self.get_all_seq_str_from_start_year(year)
@@ -208,7 +241,7 @@ class DigitalTyphoonDataset(Dataset):
         :param indices: List[int]
         :return: torch Tensor
         """
-        images = np.array([self._get_image_from_idx(idx).image() for idx in indices])
+        images = np.array([self.get_image_from_idx(idx).image() for idx in indices])
         return torch.Tensor(images)
 
     def labels_as_tensor(self, indices: List[int], label: str) -> torch.Tensor:
@@ -218,7 +251,7 @@ class DigitalTyphoonDataset(Dataset):
         :param label: str, denoting which label to retrieve
         :return: torch Tensor
         """
-        images = [self._get_image_from_idx(idx).value_from_string(label) for idx in indices]
+        images = [self.get_image_from_idx(idx).value_from_string(label) for idx in indices]
         return torch.Tensor(images)
 
     def get_number_of_sequences(self):
@@ -516,7 +549,7 @@ class DigitalTyphoonDataset(Dataset):
         """
         return self._frame_idx_to_sequence[idx].get_sequence_str()
 
-    def _get_image_from_idx(self, idx) -> DigitalTyphoonImage:
+    def get_image_from_idx(self, idx) -> DigitalTyphoonImage:
         """
         Given a dataset image idx, returns the image object from that index.
         :param idx: int, the total dataset image idx
@@ -535,6 +568,21 @@ class DigitalTyphoonDataset(Dataset):
         sequence_str = self._find_sequence_str_from_frame_index(idx)
         sequence = self._get_seq_from_seq_str(sequence_str)
         return sequence.get_image_at_idx_as_numpy(self.total_frame_idx_to_sequence_idx(idx))
+
+    def _labels_from_label_strs(self, image: DigitalTyphoonImage, label_strs):
+        """
+        Given an image and the label/labels to retrieve from the image, returns a single label or
+        a list of labels
+        :param image: image to access labels for
+        :param label_strs: either a List of label strings or a single label string
+        :return: a List of label strings or a single label string
+        """
+        if (type(label_strs) is list) or (type(label_strs) is tuple):
+            label_ray = np.array([image.value_from_string(label) for label in label_strs])
+            return label_ray
+        else:
+            label = image.value_from_string(label_strs)
+            return label
 
     def _delete_all_sequences(self):
         """

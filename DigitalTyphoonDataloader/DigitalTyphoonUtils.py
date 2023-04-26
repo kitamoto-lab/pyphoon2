@@ -93,8 +93,7 @@ class TRACK_COLS(Enum):
         elif name == 'interpolated':
             return TRACK_COLS.INTERPOLATED.value
         else:
-            raise ValueError(f"{name} is not a valid column name.")
-
+            raise KeyError(f"{name} is not a valid column name.")
 
     @classmethod
     def has_value(cls, value):

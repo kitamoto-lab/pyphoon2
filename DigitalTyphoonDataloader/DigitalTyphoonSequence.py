@@ -74,7 +74,7 @@ class DigitalTyphoonSequence:
             for filepath, file_sequence, file_date, file_satellite in filepaths:
                 if filepath not in ignore_list:
                     self.datetime_to_image[file_date].set_image_data(self.img_root / filepath,
-                                                                     load_images_into_mem=load_imgs_into_mem,
+                                                                     load_imgs_into_mem=load_imgs_into_mem,
                                                                      spectrum=spectrum)
                     if filter_func(self.datetime_to_image[file_date]):
                         self.images.append(self.datetime_to_image[file_date])

@@ -65,6 +65,7 @@ _Below is a brief example on how to initialize and access data using the DataLoa
     dataset_obj = DigitalTyphoonDataset("/path/to/image/directory/", 
                                         "/path/to/track/directory/", 
                                         "/path/to/metadata.json", 
+                                        ('grade', 'lat', 'long'), # Default labels to return 
                                         split_dataset_by='sequence',
                                         load_data_into_memory=False,
                                         ignore_list=[],
@@ -79,14 +80,17 @@ The dataset object is now instantiated and you can use the data in the desired f
   
 * Get the item at the i'th index
     ```python
-    image = dataset_obj[i]    
-    image.image() # Get the image pixels in a numpy array
-    image.year()  # Get the year the image was taken  
-    image.grade() # Get the grade of the typhoon at the time of the image
+    image_array, labels = dataset_obj[i] # labels will correspond to labels passed in on instantiation or set via dataset.set_labels()
+    image_obj = dataset_obj.get_image_at_idx(i)    
+    image_obj.image() # Get the image pixels in a numpy array
+    image_obj.year()  # Get the year the image was taken  
+    image_obj.grade() # Get the grade of the typhoon at the time of the image
                   # For a full list of accessible image metadata, see documentation
     ```  
   
 * Split the dataset into train, test, and validation sets
     ```python
     train, test, val = dataset_obj.random_split([0.7, 0.15, 0.15], split_by='sequence')
+  
+    trainloader = Dataloader(train, batch_size=16, shuffle=True)
     ```

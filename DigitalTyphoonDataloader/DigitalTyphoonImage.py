@@ -25,8 +25,8 @@ class DigitalTyphoonImage:
 
         self.image_filepath = image_filepath
         self.image_array = None
-        if image_filepath is not None:
-            self.set_image_data(image_filepath)
+        if image_filepath is not None and self.load_imgs_into_mem:
+            self.set_image_data(image_filepath, load_imgs_into_mem=self.load_imgs_into_mem)
 
         self.track_data = track_entry
         if track_entry is not None:
@@ -201,15 +201,15 @@ class DigitalTyphoonImage:
                              f'to expected amount ({len(TRACK_COLS)})')
         self.track_data = track_entry
 
-    def set_image_data(self, image_filepath: str, load_images_into_mem: bool=False, spectrum: str='infrared') -> None:
+    def set_image_data(self, image_filepath: str, load_imgs_into_mem=False, spectrum='infrared') -> None:
         """
         Sets the image file data
-        :param load_images_into_mem: bool, whether to load images into memory
+        :param load_imgs_into_mem: bool, whether to load images into memory
         :param spectrum: str, spectrum to open h5 images with
         :param image_filepath: string to image
         :return: None
         """
-        self.load_imgs_into_mem = load_images_into_mem
+        self.load_imgs_into_mem = load_imgs_into_mem
         self.spectrum = spectrum
 
         self.image_filepath = image_filepath
