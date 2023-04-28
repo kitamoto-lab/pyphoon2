@@ -212,18 +212,45 @@ class DigitalTyphoonDataset(Dataset):
         else:  # split_by == SPLIT_UNIT.SEQUENCE.value:
             return self._random_split_by_sequence(lengths, generator=generator)
 
-    def images_from_year(self, year: int) -> List[Subset]:
+    def images_from_year(self, year: int) -> Subset:
         """
-        Given a start year, return a list of dataset Subsets of sequences from that year. One subset refers to one sequence.
+        Given a start year, return a Subset (Dataset) object containing all the images from that year, in order
         :param year: the start year as a string
-        :return: the List of Subsets of the years
+        :return: Subset
         """
-        return_list = []
-        sequence_strs = self.get_all_seq_str_from_start_year(year)
+        return_indices = []
+        sequence_strs = self.get_seq_ids_from_year(year)
         for seq_str in sequence_strs:
             seq_obj = self._get_seq_from_seq_str(seq_str)
-            return_list.append(Subset(self, self.seq_indices_to_total_indices(seq_obj)))
-        return return_list
+            return_indices.extend(self.seq_indices_to_total_indices(seq_obj))
+        return Subset(self, return_indices)
+
+    def image_objects_from_year(self, year: int) -> List:
+        """
+        Given a start year, return a list of DigitalTyphoonImage objects for images from that year
+        :param year: the start year as a string
+        :return: List[DigitalTyphoonImage]
+        """
+        return_images = []
+        sequence_strs = self.get_seq_ids_from_year(year)
+        for seq_str in sequence_strs:
+            seq_obj = self._get_seq_from_seq_str(seq_str)
+            return_images.extend(seq_obj.get_all_images_in_sequence())
+        return return_images
+
+    def images_from_years(self, years: List[int]):
+        """
+        Given a list of years, returns a dataset Subset containing all images from that year, in order
+        :param years: List of year integers
+        :return: Subset
+        """
+        return_indices = []
+        for year in years:
+            sequence_strs = self.get_seq_ids_from_year(year)
+            for seq_str in sequence_strs:
+                seq_obj = self._get_seq_from_seq_str(seq_str)
+                return_indices.extend(self.seq_indices_to_total_indices(seq_obj))
+        return Subset(self, return_indices)
 
     def images_from_sequence(self, sequence_str: str) -> Subset:
         """
@@ -234,6 +261,28 @@ class DigitalTyphoonDataset(Dataset):
         seq_object = self._get_seq_from_seq_str(sequence_str)
         indices = self.seq_indices_to_total_indices(seq_object)
         return Subset(self, indices)
+
+    def image_objects_from_sequence(self, sequence_str: str) -> List:
+        """
+        Given a sequence ID, returns a list of the DigitalTyphoonImage objects in the sequence in chronological order.
+        :param sequence_str:
+        :return: List[DigitalTyphoonImage]
+        """
+        seq_object = self._get_seq_from_seq_str(sequence_str)
+        return seq_object.get_all_images_in_sequence()
+
+    def images_from_sequences(self, sequence_strs: List[str]) -> Subset:
+        """
+        Given a list of sequence IDs, returns a dataset Subset containing all the images within the
+        sequences, in order
+        :param sequence_strs: List[str], the sequence IDs
+        :return: Subset of the total dataset
+        """
+        return_indices = []
+        for sequence_str in sequence_strs:
+            seq_object = self._get_seq_from_seq_str(sequence_str)
+            return_indices.extend(self.seq_indices_to_total_indices(seq_object))
+        return Subset(self, return_indices)
 
     def images_as_tensor(self, indices: List[int]) -> torch.Tensor:
         """
@@ -261,6 +310,20 @@ class DigitalTyphoonDataset(Dataset):
         """
         return len(self.sequences)
 
+    def get_sequence_ids(self) -> List[str]:
+        """
+        Returns a list of the sequence ID's in the dataset, as strings
+        :return: List[str]
+        """
+        return list(self._sequence_str_to_seq_idx.keys())
+
+    def get_years(self) -> List[int]:
+        """
+        Returns a list of the years that typhoons have started in chronological order
+        :return: List[int]
+        """
+        return sorted([int(year) for year in self.years_to_sequence_nums.keys()])
+
     def sequence_exists(self, seq_str: str) -> bool:
         """
         Returns if a seq_str with given seq_str number exists in the dataset
@@ -282,7 +345,7 @@ class DigitalTyphoonDataset(Dataset):
         for sequence_str, metadata in data.items():
             self._read_one_seq_from_metadata(sequence_str, metadata)
 
-    def get_all_seq_str_from_start_year(self, year: str) -> List[str]:
+    def get_seq_ids_from_year(self, year: int) -> List[str]:
         """
         Given a start year, give the sequence ID strings of all sequences that start in that year.
         :param year: the start year as a string
@@ -326,13 +389,6 @@ class DigitalTyphoonDataset(Dataset):
         """
         seq_str = seq_obj.get_sequence_str()
         return [i + self._seq_str_to_first_total_idx[seq_str] for i in range(seq_obj.get_num_images())]
-
-    def get_list_of_years(self) -> List[int]:
-        """
-        Returns a list of the years that typhoons have started in chronological order
-        :return: List[int]
-        """
-        return sorted([int(year) for year in self.years_to_sequence_nums.keys()])
 
     def _get_list_of_sequence_objs(self) -> List[DigitalTyphoonSequence]:
         """
@@ -487,13 +543,19 @@ class DigitalTyphoonDataset(Dataset):
         return_indices_sorted.sort(key=lambda x: x[0])
         randomized_year_list = [list(self.years_to_sequence_nums.keys())[i]
                                 for i in randperm(len(self.years_to_sequence_nums), generator=generator)]
+
+        num_buckets = len(return_indices_sorted)
+        bucket_counter = 0
         year_iter = 0
-        for i in range(len(return_indices_sorted)):
-            while year_iter < len(self.years_to_sequence_nums) and len(return_indices_sorted[i][2]) < return_indices_sorted[i][0]:
+        while year_iter < len(randomized_year_list):
+            if len(return_indices_sorted[bucket_counter][2]) < return_indices_sorted[bucket_counter][0]:
                 for seq in self.years_to_sequence_nums[randomized_year_list[year_iter]]:
-                    return_indices_sorted[i][2] \
+                    return_indices_sorted[bucket_counter][2] \
                         .extend(self.seq_indices_to_total_indices(self._get_seq_from_seq_str(seq)))
                 year_iter += 1
+            bucket_counter += 1
+            if bucket_counter == num_buckets:
+                bucket_counter = 0
 
         return_indices_sorted.sort(key=lambda x: x[1])
         return [Subset(self, bucket_indices) for _, _, bucket_indices in return_indices_sorted]
@@ -514,22 +576,24 @@ class DigitalTyphoonDataset(Dataset):
         :return: List of Subset objects
         """
         lengths = self._calculate_split_lengths(lengths)
-
         return_indices_sorted = [[length, i, []] for i, length in enumerate(lengths)]
         return_indices_sorted.sort(key=lambda x: x[0])
+        num_buckets = len(return_indices_sorted)
 
         randomized_seq_indices = randperm(len(self.sequences), generator=generator)
-        seq_iter = 0
 
-        for i in range(len(return_indices_sorted)):
-            while seq_iter < len(self.sequences) and len(return_indices_sorted[i][2]) < return_indices_sorted[i][0]:
+        bucket_counter = 0
+        seq_iter = 0
+        while seq_iter < len(randomized_seq_indices):
+            if len(return_indices_sorted[bucket_counter][2]) < return_indices_sorted[bucket_counter][0]:
                 sequence_obj = self.sequences[randomized_seq_indices[seq_iter]]
                 sequence_idx_to_total = self.seq_indices_to_total_indices(sequence_obj)
-                return_indices_sorted[i][2].extend(sequence_idx_to_total)
+                return_indices_sorted[bucket_counter][2].extend(sequence_idx_to_total)
                 seq_iter += 1
-
+            bucket_counter += 1
+            if bucket_counter == num_buckets:
+                bucket_counter = 0
         return_indices_sorted.sort(key=lambda x: x[1])
-
         return_list = [Subset(self, bucket_indices) for _, _, bucket_indices in return_indices_sorted]
         return return_list
 

@@ -173,12 +173,17 @@ class TestDigitalTyphoonDataset(TestCase):
 
 
     def test_random_split_by_sequence_no_leakage(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
-                                             "test_data_files/metadata.json",
-                                             'grade',
-                                             split_dataset_by='sequence',
-                                             verbose=False)
+        # test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        #                                      "test_data_files/metadata.json",
+        #                                      'grade',
+        #                                      split_dataset_by='sequence',
+        #                                      verbose=False)
+        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", 'grade',
+                                             split_dataset_by='sequence', verbose=False)
+
+
         bucket1_1, bucket2_1 = test_dataset.random_split([0.7, 0.3])
+        self.assertEqual(len(test_dataset), len(bucket1_1)+len(bucket2_1))
         bucket1_1_sequences = set()
         bucket2_1_sequences = set()
         for i in range(0, len(bucket1_1.indices)):
@@ -189,19 +194,22 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertTrue(len(bucket1_1_sequences.intersection(bucket2_1_sequences)) == 0)
 
     def test_random_split_by_year_no_leakage(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
-                                             "test_data_files/metadata.json",
-                                             'grade',
-                                             split_dataset_by='year',
-                                             verbose=False)
+        # test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        #                                      "test_data_files/metadata.json",
+        #                                      'grade',
+        #                                      split_dataset_by='year',
+        #                                      verbose=False)
+        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", 'grade',
+                                             split_dataset_by='year', verbose=False)
+
         bucket1_1, bucket2_1 = test_dataset.random_split([0.7, 0.3])
+        self.assertEqual(len(test_dataset), len(bucket1_1)+len(bucket2_1))
         bucket1_1_years = set()
         bucket2_1_years = set()
         for i in range(0, len(bucket1_1.indices)):
             bucket1_1_years.add(test_dataset._find_sequence_str_from_frame_index(bucket1_1.indices[i]))
         for i in range(0, len(bucket2_1.indices)):
             bucket2_1_years.add(test_dataset._find_sequence_str_from_frame_index(bucket2_1.indices[i]))
-
         self.assertTrue(len(bucket1_1_years.intersection(bucket2_1_years)) == 0)
 
     def test_ignore_filenames_should_ignore_correct_images(self):
@@ -269,12 +277,29 @@ class TestDigitalTyphoonDataset(TestCase):
                      'test_data_files/image/202222/2022102604-202222-HMW8-1.h5'}
 
         year_images = test_dataset.images_from_year(2022)
-        sum_of_images = sum([len(year_sub) for year_sub in year_images])
-        self.assertEqual(len(filenames), sum_of_images)
+        self.assertEqual(len(filenames), len(year_images))
 
         year_images = test_dataset.images_from_year(2008)
-        num_from_year = sum([len(sub) for sub in year_images])
-        self.assertEqual(num_from_year, 180)
+        self.assertEqual(len(year_images), 180)
+
+    def test_return_images_from_year(self):
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+                                             "test_data_files/metadata.json",
+                                             'year',
+                                             split_dataset_by='frame',
+                                             verbose=False)
+        year_subset = test_dataset.images_from_years([1979, 2022])
+        self.assertEqual(len(year_subset), 55)
+
+    def test_get_seq_ids_from_year(self):
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+                                             "test_data_files/metadata.json",
+                                             'year',
+                                             split_dataset_by='frame',
+                                             verbose=False)
+        ids = test_dataset.get_seq_ids_from_year(2008)
+        ids.sort()
+        self.assertEqual(['200801', '200802'], ids)
 
     def test_images_from_sequence(self):
         test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
@@ -291,6 +316,42 @@ class TestDigitalTyphoonDataset(TestCase):
 
         seq_images = test_dataset.images_from_sequence('202222')
         self.assertEqual(len(filenames), len(seq_images))
+
+    def test_images_from_sequences(self):
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+                                             "test_data_files/metadata.json",
+                                             'grade',
+                                             split_dataset_by='frame',
+                                             verbose=False)
+        seq_subset = test_dataset.images_from_sequences(['197918', '202222'])
+        self.assertEqual(len(seq_subset), 55)
+
+    def test_image_objects_from_sequence(self):
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+                                             "test_data_files/metadata.json",
+                                             'grade',
+                                             split_dataset_by='frame',
+                                             verbose=False)
+        should_be = [test_dataset.get_image_from_idx(423),
+                     test_dataset.get_image_from_idx(424),
+                     test_dataset.get_image_from_idx(425),
+                     test_dataset.get_image_from_idx(426),
+                     test_dataset.get_image_from_idx(427)]
+
+        img_list = test_dataset.image_objects_from_sequence('202222')
+        for i in range(len(should_be)):
+            self.assertEqual(img_list[i], should_be[i])
+
+    def test_image_objects_from_year(self):
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+                                             "test_data_files/metadata.json",
+                                             'grade',
+                                             split_dataset_by='frame',
+                                             verbose=False)
+        image_list = test_dataset.image_objects_from_year(2022)
+        should_be = test_dataset.image_objects_from_sequence('202222')
+        for i in range(len(should_be)):
+            self.assertEqual(image_list[i], should_be[i])
 
     def test_images_as_tensor(self):
         test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
@@ -404,14 +465,14 @@ class TestDigitalTyphoonDataset(TestCase):
         for seq in seq_strs:
             self.assertEqual(seq, test_dataset._get_seq_from_seq_str(seq).get_sequence_str())
 
-    def test_get_list_of_years(self):
+    def test_get_years(self):
         test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
                                              verbose=False)
         year_list = [1979, 2008, 2013, 2022]
-        dataset_year_list = test_dataset.get_list_of_years()
+        dataset_year_list = test_dataset.get_years()
         self.assertEqual(year_list, dataset_year_list)
 
     def test_find_seq_str_from_frame(self):
