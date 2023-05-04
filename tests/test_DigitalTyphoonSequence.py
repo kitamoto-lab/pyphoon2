@@ -112,6 +112,29 @@ class TestDigitalTyphoonSequence(TestCase):
             if read_in_image[-1][-i-1] != last_values[-i-1]:
                 self.fail(f'Value produced was {read_in_image[-1][-i-1]}. Should be {last_values[-i-1]}')
 
+    def test_transform_func(self):
+        test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
+        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
+        test_image = test_sequence.get_image_at_idx(4)
+
+        read_in_image = test_image.image()
+        should_be_shape = read_in_image.shape
+        first_values = [296.30972999999994, 296.196816, 296.083902, 296.083902, 296.083902]
+        last_values = [285.80799, 284.56569, 285.18684, 281.78588999999994, 282.0398488235294]
+
+        for i in range(len(first_values)):
+            if read_in_image[0][i] != first_values[i]:
+                self.fail(f'Value produced was {read_in_image[0][i]}. Should be {first_values[i]}')
+            if read_in_image[-1][-i - 1] != last_values[-i - 1]:
+                self.fail(f'Value produced was {read_in_image[-1][-i - 1]}. Should be {last_values[-i - 1]}')
+
+        test_sequence = DigitalTyphoonSequence('200801', 2008, 5, transform_func=lambda img: np.ones(img.shape))
+        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
+        test_image = test_sequence.get_image_at_idx(4)
+        self.assertTrue(np.array_equal(np.ones(should_be_shape), test_image.image()))
+
     def test_get_img_at_idx_as_numpy_should_return_correct_image(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
         test_sequence.process_track_data('test_data_files/track/200801.csv')

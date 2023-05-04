@@ -9,7 +9,7 @@ from DigitalTyphoonDataloader.DigitalTyphoonUtils import TRACK_COLS
 
 
 class DigitalTyphoonImage:
-    def __init__(self, image_filepath: str, track_entry: np.ndarray, load_imgs_into_mem=False, spectrum='infrared'):
+    def __init__(self, image_filepath: str, track_entry: np.ndarray, load_imgs_into_mem=False, transform_func=None, spectrum='infrared'):
         """
         Class for one image with metadata for the DigitalTyphoonDataset
 
@@ -19,9 +19,14 @@ class DigitalTyphoonImage:
         :param track_entry: np.ndarray, 1d numpy array for the track csv entry corresponding to the image
         :param load_imgs_into_mem: bool, flag indicating whether images should be loaded into memory
         :param spectrum: str, spectrum to read the image in
+        param transform_func: this function will be called on the image array when the array is accessed (or read into memory).
+                               It should take and return a numpy image array
+
         """
         self.load_imgs_into_mem = load_imgs_into_mem
         self.spectrum = spectrum
+        self.transform_func = transform_func
+
 
         self.image_filepath = image_filepath
         self.image_array = None
@@ -31,6 +36,7 @@ class DigitalTyphoonImage:
         self.track_data = track_entry
         if track_entry is not None:
             self.set_track_data(track_entry)
+
 
     def image(self, spectrum='infrared') -> np.ndarray:
         """
@@ -42,6 +48,10 @@ class DigitalTyphoonImage:
             return self.image_array
 
         image = self._get_h5_image_as_numpy(spectrum=spectrum)
+
+        if self.transform_func is not None:
+            image = self.transform_func(image)
+
         if self.load_imgs_into_mem:
             self.image_array = image
         return image

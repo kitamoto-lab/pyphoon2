@@ -32,6 +32,30 @@ class TestDigitalTyphoonImage(TestCase):
             if read_in_image[-1][-i-1] != last_values[-i-1]:
                 self.fail(f'Value produced was {read_in_image[-1][-i-1]}. Should be {last_values[-i-1]}')
 
+    def test_transform_func(self):
+        test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
+                                         np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+                                         load_imgs_into_mem=True)
+
+        read_in_image = test_image.image()
+        first_values = [296.30972999999994, 296.196816, 296.083902, 296.083902, 296.083902]
+        last_values = [285.80799, 284.56569, 285.18684, 281.78588999999994, 282.0398488235294]
+
+        shape = read_in_image.shape
+        for i in range(len(first_values)):
+            if read_in_image[0][i] != first_values[i]:
+                self.fail(f'Value produced was {read_in_image[0][i]}. Should be {first_values[i]}')
+            if read_in_image[-1][-i - 1] != last_values[-i - 1]:
+                self.fail(f'Value produced was {read_in_image[-1][-i - 1]}. Should be {last_values[-i - 1]}')
+
+        test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
+                                         np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+                                         load_imgs_into_mem=True,
+                                         transform_func=lambda img: np.ones(img.shape))
+
+        read_in_image = test_image.image()
+        self.assertTrue(np.array_equal(np.ones(shape), read_in_image))
+
     def test_give_track_entry_on_init(self):
         should_be = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0.])
         track_entry = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0.])

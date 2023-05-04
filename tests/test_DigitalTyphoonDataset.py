@@ -4,6 +4,8 @@ from unittest import TestCase
 import numpy as np
 import torch
 
+from torch.utils.data import DataLoader
+
 from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
 from DigitalTyphoonDataloader.DigitalTyphoonSequence import DigitalTyphoonSequence
 from DigitalTyphoonDataloader.DigitalTyphoonUtils import parse_image_filename
@@ -13,13 +15,17 @@ class TestDigitalTyphoonDataset(TestCase):
         # tests process_metadata_file, populate_images_into_sequences, _populate_track_data_into_sequences, and
         #  _assign_all_images_a_dataset_idx
 
-        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", 'grade', verbose=False)
+        def filter_func(image):
+            return image.grade() < 7
+        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", 'grade', verbose=False, filter_func=filter_func)
+        test, train = test_dataset.random_split([0.8, 0.2], split_by='sequence')
 
         test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
                                              verbose=False)
+
         self.assertEqual(5, len(test_dataset.sequences))
         self.assertEqual(4, len(test_dataset.years_to_sequence_nums))
         self.assertEqual(428, test_dataset.number_of_frames)
@@ -133,6 +139,24 @@ class TestDigitalTyphoonDataset(TestCase):
                 self.fail(f'Value produced was {read_in_image[0][i]}. Should be {first_values[i]}')
             if read_in_image[-1][-i-1] != last_values[-i-1]:
                 self.fail(f'Value produced was {read_in_image[-1][-i-1]}. Should be {last_values[-i-1]}')
+
+    def test_transform_func_transforms(self):
+        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/track/',
+                                             'test_data_files/metadata.json', 'grade', verbose=False)
+        read_in_image = test_dataset._get_image_from_idx_as_numpy(4)
+        first_values = [296.30972999999994, 296.196816, 296.083902, 296.083902, 296.083902]
+        last_values = [285.80799, 284.56569, 285.18684, 281.78588999999994, 282.0398488235294]
+        should_be_shape = read_in_image.shape
+        for i in range(len(first_values)):
+            if read_in_image[0][i] != first_values[i]:
+                self.fail(f'Value produced was {read_in_image[0][i]}. Should be {first_values[i]}')
+            if read_in_image[-1][-i-1] != last_values[-i-1]:
+                self.fail(f'Value produced was {read_in_image[-1][-i-1]}. Should be {last_values[-i-1]}')
+        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/track/',
+                                             'test_data_files/metadata.json', 'grade', transform_func=lambda img: np.ones(img.shape), verbose=False)
+        read_in_image = test_dataset._get_image_from_idx_as_numpy(4)
+        self.assertTrue(np.array_equal(np.ones(should_be_shape), read_in_image))
+
 
     def test_random_split_by_frame_random_produces_nonidentical_indices(self):
         test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",

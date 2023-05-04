@@ -28,6 +28,7 @@ class DigitalTyphoonDataset(Dataset):
                  load_data_into_memory=False,
                  ignore_list=None,
                  filter_func=None,
+                 transform_func=None,
                  verbose=False) -> None:
         """
         Dataloader for the DigitalTyphoon dataset.
@@ -44,6 +45,8 @@ class DigitalTyphoonDataset(Dataset):
         :param ignore_list: a list of filenames (not path) to ignore and NOT add to the dataset
         :param filter_func: a function used to filter out images from the dataset. Should accept an DigitalTyphoonImage object
                        and return a bool True or False if it should be included in the dataset
+        :param transform_func: this function will be called on the image array for each image when reading in the dataset.
+                               It should take and return a numpy image array
         :param verbose: Print verbose program information
         """
 
@@ -83,6 +86,11 @@ class DigitalTyphoonDataset(Dataset):
             self.filter = filter_func
         else:
             self.filter = lambda img: True
+
+        if transform_func:
+            self.transform_func = transform_func
+        else:
+            self.transform_func = lambda img: img
 
         # Structures holding the data objects
         self.sequences: List[DigitalTyphoonSequence] = list()  # List of seq_str objects
@@ -445,6 +453,7 @@ class DigitalTyphoonDataset(Dataset):
         self.sequences.append(DigitalTyphoonSequence(sequence_str,
                                                      seq_start_date.year,
                                                      metadata_json['frames'],
+                                                     transform_func=self.transform_func,
                                                      verbose=self.verbose))
         self._sequence_str_to_seq_idx[sequence_str] = len(self.sequences) - 1
 

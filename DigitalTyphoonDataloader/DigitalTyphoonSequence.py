@@ -15,12 +15,14 @@ from DigitalTyphoonDataloader.DigitalTyphoonUtils import parse_image_filename, i
 
 class DigitalTyphoonSequence:
 
-    def __init__(self, seq_str: str, start_year: int, num_frames: int, verbose=False):
+    def __init__(self, seq_str: str, start_year: int, num_frames: int, transform_func=None, verbose=False):
         """
         Class representing one typhoon sequence from the DigitalTyphoon dataset
         :param seq_str: str, sequence ID as a string
         :param start_year: int, the year in which the typhoon starts in
         :param num_frames: int, number of frames/images in the sequence
+        :param transform_func: this function will be called on each image before saving it/returning it.
+                               It should take and return a np array
         """
         self.verbose = verbose
 
@@ -31,6 +33,7 @@ class DigitalTyphoonSequence:
         self.track_data = np.array([])
         self.img_root = None  # root path to directory containing image files
         self.track_path = None  # path to track file data
+        self.transform_func = transform_func
 
         # Ordered list containing image objects with metadata
         self.images: List[DigitalTyphoonImage] = list()
@@ -127,7 +130,7 @@ class DigitalTyphoonSequence:
         for row in data:
             row_datetime = datetime(int(row[TRACK_COLS.YEAR.value]), int(row[TRACK_COLS.MONTH.value]),
                                     int(row[TRACK_COLS.DAY.value]), int(row[TRACK_COLS.HOUR.value]))
-            self.datetime_to_image[row_datetime] = DigitalTyphoonImage(None, row)
+            self.datetime_to_image[row_datetime] = DigitalTyphoonImage(None, row, transform_func=self.transform_func)
             self.num_track_entries += 1
 
     def add_track_data(self, filename: str, csv_delimiter=',') -> None:
