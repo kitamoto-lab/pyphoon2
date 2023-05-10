@@ -3,6 +3,7 @@ from unittest import TestCase
 
 import numpy as np
 import torch
+from torch import nn
 
 from torch.utils.data import DataLoader
 
@@ -15,6 +16,12 @@ class TestDigitalTyphoonDataset(TestCase):
         # tests process_metadata_file, populate_images_into_sequences, _populate_track_data_into_sequences, and
         #  _assign_all_images_a_dataset_idx
 
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+                                             "test_data_files/metadata.json",
+                                             'grade',
+                                             get_images_by_sequence=True,
+                                             split_dataset_by='frame',
+                                             verbose=False)
         def filter_func(image):
             return image.grade() < 7
         test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", 'grade', verbose=False, filter_func=filter_func)
@@ -235,6 +242,23 @@ class TestDigitalTyphoonDataset(TestCase):
         for i in range(0, len(bucket2_1.indices)):
             bucket2_1_years.add(test_dataset._find_sequence_str_from_frame_index(bucket2_1.indices[i]))
         self.assertTrue(len(bucket1_1_years.intersection(bucket2_1_years)) == 0)
+
+    def test_random_split_get_sequence(self):
+        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", 'grade',
+                                             get_images_by_sequence=True,
+                                             verbose=False)
+        test, train = test_dataset.random_split([0.8, 0.2], split_by='year')
+        test_years = set([test_dataset.get_ith_sequence(i) for i in test.indices])
+        train_years = set([test_dataset.get_ith_sequence(i) for i in train.indices])
+        self.assertTrue(len(test_years.intersection(train_years)) == 0)
+
+        test, train = test_dataset.random_split([0.8, 0.2], split_by='frame')
+        self.assertEqual(len(test.indices), len(set(test.indices)))
+        self.assertEqual(len(train.indices), len(set(train.indices)))
+
+        test, train = test_dataset.random_split([0.8, 0.2], split_by='sequence')
+        self.assertEqual(len(test.indices), len(set(test.indices)))
+        self.assertEqual(len(train.indices), len(set(train.indices)))
 
     def test_ignore_filenames_should_ignore_correct_images(self):
         test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",

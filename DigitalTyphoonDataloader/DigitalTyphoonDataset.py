@@ -87,10 +87,7 @@ class DigitalTyphoonDataset(Dataset):
         else:
             self.filter = lambda img: True
 
-        if transform_func:
-            self.transform_func = transform_func
-        else:
-            self.transform_func = lambda img: img
+        self.transform_func = transform_func
 
         # Structures holding the data objects
         self.sequences: List[DigitalTyphoonSequence] = list()  # List of seq_str objects
@@ -149,12 +146,11 @@ class DigitalTyphoonDataset(Dataset):
         e.g. if the dataset was instantiated with labels='grade', dataset[0] will return image, grade
              If the dataset was instantiated with labels=('lat', 'lng') dataset[0] will return image, [lat, lng]
 
-        :param idx: int, index of image or seq_str within total dataset
+        :param idx: int, index of image or seq within total dataset
         :return: a List of image arrays and labels, or single image and labels
         """
         if self.get_images_by_sequence:
-            seq_str = self._find_sequence_str_from_frame_index(idx)
-            seq = self._get_seq_from_seq_str(seq_str)
+            seq = self.get_ith_sequence(idx)
             images = seq.get_all_images_in_sequence()
             image_arrays = np.array([image.image() for image in images])
             labels = np.array([self._labels_from_label_strs(image, self.labels) for image in images])
@@ -194,6 +190,10 @@ class DigitalTyphoonDataset(Dataset):
         Returns a list of Subsets of indices according to requested lengths. If split is anything other than frame,
         indices within their split unit are not randomized. (I.e. indices of a seq_str will be kept contiguous, not
         randomized order mixing with other sequences).
+
+        If "get_images_by_sequence" is set to True on initialization, split_by frame and sequence are functionally
+        identical, and will split the number of sequences into the requested bucket sizes.
+        If split_by='year', then sequences with the same year will be placed in the same bucket.
 
         For Subset doc see https://pytorch.org/docs/stable/data.html#torch.utils.data.Subset.
 
@@ -339,6 +339,16 @@ class DigitalTyphoonDataset(Dataset):
         :return: Boolean True if present, False otherwise
         """
         return seq_str in self._sequence_str_to_seq_idx
+
+    def get_ith_sequence(self, idx: int) -> DigitalTyphoonSequence:
+        """
+        Given an index idx, returns the idx'th sequence in the dataset
+        :param idx: int index
+        :return: DigitalTyphoonSequence
+        """
+        if idx >= len(self.sequences):
+            raise ValueError(f'Index {idx} is outside the range of sequences.')
+        return self.sequences[idx]
 
     def process_metadata_file(self, filepath: str):
         """
@@ -543,6 +553,9 @@ class DigitalTyphoonDataset(Dataset):
         approximation where each bucket is guaranteed to have at least one item is used. Randomization is otherwise
         preserved.
 
+        If "get_images_by_sequence" was set to True, then each returned index refers to a sequence. No year will be
+        split between two buckets.
+
         :param lengths: Lengths or fractions of splits to be produced
         :param generator: Generator used for the random permutation.
         :return: List of Subset objects
@@ -559,8 +572,11 @@ class DigitalTyphoonDataset(Dataset):
         while year_iter < len(randomized_year_list):
             if len(return_indices_sorted[bucket_counter][2]) < return_indices_sorted[bucket_counter][0]:
                 for seq in self.years_to_sequence_nums[randomized_year_list[year_iter]]:
-                    return_indices_sorted[bucket_counter][2] \
-                        .extend(self.seq_indices_to_total_indices(self._get_seq_from_seq_str(seq)))
+                    if self.get_images_by_sequence:
+                        return_indices_sorted[bucket_counter][2].append(self._sequence_str_to_seq_idx[seq])
+                    else:
+                        return_indices_sorted[bucket_counter][2] \
+                            .extend(self.seq_indices_to_total_indices(self._get_seq_from_seq_str(seq)))
                 year_iter += 1
             bucket_counter += 1
             if bucket_counter == num_buckets:
@@ -580,6 +596,10 @@ class DigitalTyphoonDataset(Dataset):
         approximation where each bucket is guaranteed to have at least one item is used. Randomization is otherwise
         preserved.
 
+        If "get_images_by_sequence" was set to true, then random_split returns buckets containing indices referring to
+        entire sequences. As an atomic unit is a sequence, this function adds no extra functionality over
+        the default random_split function.
+
         :param lengths: Lengths or fractions of splits to be produced
         :param generator: Generator used for the random permutation.
         :return: List of Subset objects
@@ -595,9 +615,12 @@ class DigitalTyphoonDataset(Dataset):
         seq_iter = 0
         while seq_iter < len(randomized_seq_indices):
             if len(return_indices_sorted[bucket_counter][2]) < return_indices_sorted[bucket_counter][0]:
-                sequence_obj = self.sequences[randomized_seq_indices[seq_iter]]
-                sequence_idx_to_total = self.seq_indices_to_total_indices(sequence_obj)
-                return_indices_sorted[bucket_counter][2].extend(sequence_idx_to_total)
+                if self.get_images_by_sequence:
+                    return_indices_sorted[bucket_counter][2].append(randomized_seq_indices[seq_iter])
+                else:
+                    sequence_obj = self.sequences[randomized_seq_indices[seq_iter]]
+                    sequence_idx_to_total = self.seq_indices_to_total_indices(sequence_obj)
+                    return_indices_sorted[bucket_counter][2].extend(sequence_idx_to_total)
                 seq_iter += 1
             bucket_counter += 1
             if bucket_counter == num_buckets:
