@@ -29,6 +29,7 @@ class DigitalTyphoonDataset(Dataset):
                  ignore_list=None,
                  filter_func=None,
                  transform_func=None,
+                 transform=None,
                  verbose=False) -> None:
         """
         Dataloader for the DigitalTyphoon dataset.
@@ -47,6 +48,8 @@ class DigitalTyphoonDataset(Dataset):
                        and return a bool True or False if it should be included in the dataset
         :param transform_func: this function will be called on the image array for each image when reading in the dataset.
                                It should take and return a numpy image array
+       :param transform: Pytorch transform func. will be called on a sample (either image array or sequence array)
+                        when getitem is called
         :param verbose: Print verbose program information
         """
 
@@ -88,6 +91,7 @@ class DigitalTyphoonDataset(Dataset):
             self.filter = lambda img: True
 
         self.transform_func = transform_func
+        self.transform = transform
 
         # Structures holding the data objects
         self.sequences: List[DigitalTyphoonSequence] = list()  # List of seq_str objects
@@ -154,11 +158,16 @@ class DigitalTyphoonDataset(Dataset):
             images = seq.get_all_images_in_sequence()
             image_arrays = np.array([image.image() for image in images])
             labels = np.array([self._labels_from_label_strs(image, self.labels) for image in images])
+            if self.transform:
+                image_arrays = self.transform(image_arrays)
             return image_arrays, labels
         else:
             image = self.get_image_from_idx(idx)
             labels = self._labels_from_label_strs(image, self.labels)
-            return image.image(), labels
+            ret_img = image.image()
+            if self.transform:
+                ret_img = self.transform(ret_img)
+            return ret_img, labels
 
     def set_label(self, label_strs) -> None:
         """
