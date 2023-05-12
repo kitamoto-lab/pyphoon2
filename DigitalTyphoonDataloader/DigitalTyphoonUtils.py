@@ -55,6 +55,9 @@ class TRACK_COLS(Enum):
     SHORT30 = 14
     LANDFALL = 15
     INTERPOLATED = 16
+    FILENAME = 17
+    MASK_1 = 18
+    MASK_1_PERCENT = 19
 
     @classmethod
     def str_to_value(cls, name):
@@ -92,6 +95,12 @@ class TRACK_COLS(Enum):
             return TRACK_COLS.LANDFALL.value
         elif name == 'interpolated':
             return TRACK_COLS.INTERPOLATED.value
+        elif name == 'filename':
+            return TRACK_COLS.FILENAME.value
+        elif name == 'mask_1':
+            return TRACK_COLS.MASK_1.value
+        elif name == 'mask_1_percent':
+            return TRACK_COLS.MASK_1_PERCENT.value
         else:
             raise KeyError(f"{name} is not a valid column name.")
 

@@ -9,7 +9,7 @@ from DigitalTyphoonDataloader.DigitalTyphoonUtils import TRACK_COLS
 
 
 class DigitalTyphoonImage:
-    def __init__(self, image_filepath: str, track_entry: np.ndarray, load_imgs_into_mem=False, transform_func=None, spectrum='infrared'):
+    def __init__(self, image_filepath: str, track_entry: np.ndarray, sequence_id=None, load_imgs_into_mem=False, transform_func=None, spectrum='infrared'):
         """
         Class for one image with metadata for the DigitalTyphoonDataset
 
@@ -23,6 +23,8 @@ class DigitalTyphoonImage:
                                It should take and return a numpy image array
 
         """
+        self.sequence_str = sequence_id
+
         self.load_imgs_into_mem = load_imgs_into_mem
         self.spectrum = spectrum
         self.transform_func = transform_func
@@ -114,77 +116,77 @@ class DigitalTyphoonImage:
         Returns the latitude of the image
         :return: float
         """
-        return self.track_data[TRACK_COLS.LAT.value]
+        return float(self.track_data[TRACK_COLS.LAT.value])
 
     def long(self) -> float:
         """
         Returns the longitude of the image
         :return: float
         """
-        return self.track_data[TRACK_COLS.LNG.value]
+        return float(self.track_data[TRACK_COLS.LNG.value])
 
     def pressure(self) -> float:
         """
         Returns the pressure in # TODO: units? probably hg
         :return: float
         """
-        return self.track_data[TRACK_COLS.PRESSURE.value]
+        return float(self.track_data[TRACK_COLS.PRESSURE.value])
 
     def wind(self) -> float:
         """
         Returns the wind speed in # TODO: units?
         :return: float
         """
-        return self.track_data[TRACK_COLS.WIND.value]
+        return float(self.track_data[TRACK_COLS.WIND.value])
 
     def dir50(self) -> float:
         """
         # TODO: what is this?
         :return: float
         """
-        return self.track_data[TRACK_COLS.DIR50.value]
+        return float(self.track_data[TRACK_COLS.DIR50.value])
 
     def long50(self) -> float:
         """
         # TODO: what is this?
         :return: float
         """
-        return self.track_data[TRACK_COLS.LONG50.value]
+        return float(self.track_data[TRACK_COLS.LONG50.value])
 
     def short50(self) -> float:
         """
         # TODO: what is this?
         :return: float
         """
-        return self.track_data[TRACK_COLS.SHORT50.value]
+        return float(self.track_data[TRACK_COLS.SHORT50.value])
 
     def dir30(self) -> float:
         """
         # TODO: what is this?
         :return: float
         """
-        return self.track_data[TRACK_COLS.DIR30.value]
+        return float(self.track_data[TRACK_COLS.DIR30.value])
 
     def long30(self) -> float:
         """
         # TODO: what is this?
         :return: float
         """
-        return self.track_data[TRACK_COLS.LONG30.value]
+        return float(self.track_data[TRACK_COLS.LONG30.value])
 
     def short30(self) -> float:
         """
         # TODO: what is this?
         :return: float
         """
-        return self.track_data[TRACK_COLS.SHORT30.value]
+        return float(self.track_data[TRACK_COLS.SHORT30.value])
 
     def landfall(self) -> float:
         """
         # TODO: what is this?
         :return: float
         """
-        return self.track_data[TRACK_COLS.LANDFALL.value]
+        return float(self.track_data[TRACK_COLS.LANDFALL.value])
 
     def interpolated(self) -> bool:
         """
@@ -199,6 +201,27 @@ class DigitalTyphoonImage:
         :return: str
         """
         return str(self.image_filepath)
+
+    def mask_1(self) -> float:
+        """
+        Returns number of pixels in the image that are corrupted
+        :return:
+        """
+        return float(self.track_data[TRACK_COLS.MASK_1.value])
+
+    def mask_1_percent(self) -> float:
+        """
+        Returns percentage of pixels in the image that are corrupted
+        :return:
+        """
+        return float(self.track_data[TRACK_COLS.MASK_1_PERCENT.value])
+
+    def sequence_id(self) -> str:
+        """
+        Returns the sequence ID this image belongs to
+        :return:
+        """
+        return self.sequence_str
 
     def set_track_data(self, track_entry: np.ndarray) -> None:
         """

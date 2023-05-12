@@ -6,28 +6,57 @@ import torch
 from torch import nn
 
 from torch.utils.data import DataLoader
+from torchvision import transforms
+from torchvision.transforms import ToTensor, Resize
 
 from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
 from DigitalTyphoonDataloader.DigitalTyphoonSequence import DigitalTyphoonSequence
 from DigitalTyphoonDataloader.DigitalTyphoonUtils import parse_image_filename
 
 class TestDigitalTyphoonDataset(TestCase):
+
+    def test_playground(self):
+        class PadSequence(object):
+
+            def __init__(self, max_length):
+                self.max_length = max_length
+
+            def __call__(self, sample):
+                sample = torch.Tensor(sample)
+                pad_length = self.max_length - sample.size()[0]
+                pad = torch.zeros(pad_length, sample.size(1), sample.size(2))
+                print(pad.size())
+                sample = torch.cat((pad, sample), dim=0)
+                return sample
+
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
+                                             "test_data_files/metadata.json",
+                                             'grade',
+                                             get_images_by_sequence=True,
+                                             split_dataset_by='frame',
+                                             transform=transforms.Compose([
+                                                 PadSequence(505),
+                                             ]),
+                                             verbose=False)
+
+
     def test__initialize_and_populate_images_into_sequences(self):
         # tests process_metadata_file, populate_images_into_sequences, _populate_track_data_into_sequences, and
         #  _assign_all_images_a_dataset_idx
 
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              get_images_by_sequence=True,
                                              split_dataset_by='frame',
                                              verbose=False)
+
         def filter_func(image):
             return image.grade() < 7
-        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", 'grade', verbose=False, filter_func=filter_func)
+        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/metadata/", "../data/metadata.json", 'grade', verbose=False, filter_func=filter_func)
         test, train = test_dataset.random_split([0.8, 0.2], split_by='sequence')
 
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -41,7 +70,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(5, len(test_dataset._seq_str_to_first_total_idx))
 
     def test_len(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -49,7 +78,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(len(test_dataset), 428)
 
     def test_getitem(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -58,7 +87,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertTrue(test_dataset[0][1], test_dataset.get_image_from_idx(0).grade())
 
     def test_setlabel(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -71,7 +100,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(str(err.exception), "'nonexistent_label is not a valid column name.'")
 
     def test__find_sequence_from_index_should_return_proper_sequences(self):
-        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", 'grade', verbose=False)
+        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/metadata/", "../data/metadata.json", 'grade', verbose=False)
         test_dataset._delete_all_sequences()
         for i in range(10):  # range of frames indices is 0 ~ 199
             sequence_obj = (DigitalTyphoonSequence(str(i), 1990, 20))
@@ -106,7 +135,7 @@ class TestDigitalTyphoonDataset(TestCase):
             self.fail(f'Should be \'9\'. Returned \'{result}\'')
 
     def test_populate_images_seq_images_are_read_in_chronological_order(self):
-        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", 'grade', verbose=False)
+        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/metadata/", "../data/metadata.json", 'grade', verbose=False)
         sequences_list = test_dataset._get_list_of_sequence_objs()
         for sequence in sequences_list:
             image_paths = sequence.get_image_filepaths()
@@ -118,24 +147,24 @@ class TestDigitalTyphoonDataset(TestCase):
 
 
     def test__populate_track_data_into_sequences(self):
-        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/track/',
+        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/metadata/',
                                              'test_data_files/metadata.json', 'grade', verbose=False)
 
         seq200801 = test_dataset._get_seq_from_seq_str('200801')
         seq200802 = test_dataset._get_seq_from_seq_str('200802')
 
-        if not (seq200801.get_track_path() == 'test_data_files/track/200801.csv'):
+        if not (seq200801.get_track_path() == 'test_data_files/metadata/200801.csv'):
             self.fail(f'Sequence 200801 does not have the right path. '
-                      f'Should be \'test_data_files/track/200801.csv\'. '
+                      f'Should be \'test_data_files/metadata/200801.csv\'. '
                       f'Path given is \'{seq200801.get_track_path()}\'')
 
-        if not (seq200802.get_track_path() == 'test_data_files/track/200802.csv'):
+        if not (seq200802.get_track_path() == 'test_data_files/metadata/200802.csv'):
             self.fail(f'Sequence 200801 does not have the right path. '
-                      f'Should be \'test_data_files/track/200802.csv\'. '
+                      f'Should be \'test_data_files/metadata/200802.csv\'. '
                       f'Path given is \'{seq200802.get_track_path()}\'')
 
     def test_populate_images_reads_file_correctly(self):
-        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/track/',
+        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/metadata/',
                                              'test_data_files/metadata.json', 'grade', verbose=False)
         read_in_image = test_dataset._get_image_from_idx_as_numpy(4)
         first_values = [296.30972999999994, 296.196816, 296.083902, 296.083902, 296.083902]
@@ -148,7 +177,7 @@ class TestDigitalTyphoonDataset(TestCase):
                 self.fail(f'Value produced was {read_in_image[-1][-i-1]}. Should be {last_values[-i-1]}')
 
     def test_transform_func_transforms(self):
-        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/track/',
+        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/metadata/',
                                              'test_data_files/metadata.json', 'grade', verbose=False)
         read_in_image = test_dataset._get_image_from_idx_as_numpy(4)
         first_values = [296.30972999999994, 296.196816, 296.083902, 296.083902, 296.083902]
@@ -159,14 +188,14 @@ class TestDigitalTyphoonDataset(TestCase):
                 self.fail(f'Value produced was {read_in_image[0][i]}. Should be {first_values[i]}')
             if read_in_image[-1][-i-1] != last_values[-i-1]:
                 self.fail(f'Value produced was {read_in_image[-1][-i-1]}. Should be {last_values[-i-1]}')
-        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/track/',
+        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/metadata/',
                                              'test_data_files/metadata.json', 'grade', transform_func=lambda img: np.ones(img.shape), verbose=False)
         read_in_image = test_dataset._get_image_from_idx_as_numpy(4)
         self.assertTrue(np.array_equal(np.ones(should_be_shape), read_in_image))
 
 
     def test_random_split_by_frame_random_produces_nonidentical_indices(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              "grade",
                                              split_dataset_by='frame',
@@ -204,12 +233,12 @@ class TestDigitalTyphoonDataset(TestCase):
 
 
     def test_random_split_by_sequence_no_leakage(self):
-        # test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        # test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
         #                                      "test_data_files/metadata.json",
         #                                      'grade',
         #                                      split_dataset_by='sequence',
         #                                      verbose=False)
-        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", 'grade',
+        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/metadata/", "../data/metadata.json", 'grade',
                                              split_dataset_by='sequence', verbose=False)
 
 
@@ -225,12 +254,12 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertTrue(len(bucket1_1_sequences.intersection(bucket2_1_sequences)) == 0)
 
     def test_random_split_by_year_no_leakage(self):
-        # test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        # test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
         #                                      "test_data_files/metadata.json",
         #                                      'grade',
         #                                      split_dataset_by='year',
         #                                      verbose=False)
-        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", 'grade',
+        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/metadata/", "../data/metadata.json", 'grade',
                                              split_dataset_by='year', verbose=False)
 
         bucket1_1, bucket2_1 = test_dataset.random_split([0.7, 0.3])
@@ -244,7 +273,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertTrue(len(bucket1_1_years.intersection(bucket2_1_years)) == 0)
 
     def test_random_split_get_sequence(self):
-        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/track/", "../data/metadata.json", 'grade',
+        test_dataset = DigitalTyphoonDataset("../data/image/", "../data/metadata/", "../data/metadata.json", 'grade',
                                              get_images_by_sequence=True,
                                              verbose=False)
         test, train = test_dataset.random_split([0.8, 0.2], split_by='year')
@@ -261,7 +290,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(len(train.indices), len(set(train.indices)))
 
     def test_ignore_filenames_should_ignore_correct_images(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -295,7 +324,7 @@ class TestDigitalTyphoonDataset(TestCase):
         ]
         #
         # Create new dataset ignoring those images
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              ignore_list=images_to_ignore,
@@ -312,7 +341,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(0, len(images_to_ignore_set.intersection(all_image_filenames)))
 
     def test_return_images_from_year(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                             "test_data_files/metadata.json",
                                             'year',
                                             split_dataset_by='frame',
@@ -331,7 +360,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(len(year_images), 180)
 
     def test_return_images_from_year(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'year',
                                              split_dataset_by='frame',
@@ -340,7 +369,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(len(year_subset), 55)
 
     def test_get_seq_ids_from_year(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'year',
                                              split_dataset_by='frame',
@@ -350,7 +379,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(['200801', '200802'], ids)
 
     def test_images_from_sequence(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -366,7 +395,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(len(filenames), len(seq_images))
 
     def test_images_from_sequences(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -375,7 +404,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(len(seq_subset), 55)
 
     def test_image_objects_from_sequence(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -391,7 +420,7 @@ class TestDigitalTyphoonDataset(TestCase):
             self.assertEqual(img_list[i], should_be[i])
 
     def test_image_objects_from_year(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -402,7 +431,7 @@ class TestDigitalTyphoonDataset(TestCase):
             self.assertEqual(image_list[i], should_be[i])
 
     def test_images_as_tensor(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -417,7 +446,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertTrue(torch.equal(img_tensor, should_be))
 
     def test_labels_as_tensor(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -432,14 +461,14 @@ class TestDigitalTyphoonDataset(TestCase):
 
 
     def test_get_num_sequences(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
                                              verbose=False)
         self.assertEqual(5, test_dataset.get_number_of_sequences())
 
-        test_dataset = DigitalTyphoonDataset("dummy_test_data/image/", "dummy_test_data/track/",
+        test_dataset = DigitalTyphoonDataset("dummy_test_data/image/", "dummy_test_data/metadata/",
                                              "dummy_test_data/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -447,7 +476,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(0, test_dataset.get_number_of_sequences())
 
     def test_sequence_exists(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -460,7 +489,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertFalse(test_dataset.sequence_exists('201324'))
 
     def test_seq_indices_to_total_indices(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -471,7 +500,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(should_be, return_indices)
 
     def test_get_list_of_seq_obj(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -481,7 +510,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(['200801', '200802','197918', '201323', '202222'], sequence_names)
 
     def test_assign_all_images_dataset_idx(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -504,7 +533,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(counts_should_be, seq_count)
 
     def test_get_seq_from_seq_str(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -514,7 +543,7 @@ class TestDigitalTyphoonDataset(TestCase):
             self.assertEqual(seq, test_dataset._get_seq_from_seq_str(seq).get_sequence_str())
 
     def test_get_years(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -524,7 +553,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(year_list, dataset_year_list)
 
     def test_find_seq_str_from_frame(self):
-        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/track/",
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
                                              'grade',
                                              split_dataset_by='frame',
@@ -533,7 +562,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual('200802', test_dataset._find_sequence_str_from_frame_index(6))
 
     def test_get_image_from_idx(self):
-        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/track/',
+        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/metadata/',
                                              'test_data_files/metadata.json', 'grade', verbose=False)
         read_in_image = test_dataset.get_image_from_idx(4)
 
@@ -541,7 +570,7 @@ class TestDigitalTyphoonDataset(TestCase):
         self.assertEqual(read_in_image, correct_image)
 
     def test_get_image_from_idx_as_numpy(self):
-        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/track/',
+        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/metadata/',
                                              'test_data_files/metadata.json', 'grade', verbose=False)
         read_in_image_array = test_dataset._get_image_from_idx_as_numpy(4)
         first_values = [296.30972999999994, 296.196816, 296.083902, 296.083902, 296.083902]
@@ -555,7 +584,7 @@ class TestDigitalTyphoonDataset(TestCase):
 
 
     def test_delete_all_sequence(self):
-        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/track/',
+        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/metadata/',
                                              'test_data_files/metadata.json', 'grade', verbose=False)
         self.assertEqual(5, test_dataset.get_number_of_sequences())
 

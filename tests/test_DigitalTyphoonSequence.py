@@ -14,7 +14,7 @@ class TestDigitalTyphoonSequence(TestCase):
 
     def test_load_images_into_memory_on_startup(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
 
         if len(test_sequence.images) != 5:
@@ -22,7 +22,7 @@ class TestDigitalTyphoonSequence(TestCase):
 
     def test_process_seq_img_dir_into_seq_no_image_loading_should_process_correctly(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/')
         should_be = [
             'test_data_files/image/200801/2008041300-200801-MTS1-1.h5',
@@ -38,28 +38,26 @@ class TestDigitalTyphoonSequence(TestCase):
     def test_process_seq_img_dir_into_seq_with_image_loading_should_load_correct_number(self):
         should_have = 5
         test_sequence = DigitalTyphoonSequence('200801', 2008, should_have)
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         if len(test_sequence.images) != should_have:
             self.fail(f'Sequence should have {should_have}. Program gave {len(test_sequence.images)}')
 
     def test_add_track_data(self):
         test_sequence = DigitalTyphoonSequence('000001', 0000, 157)
-        test_sequence.add_track_data('test_data_files/track/000001.csv')
+        test_sequence.add_track_data('test_data_files/metadata/000001.csv')
 
-        should_be = np.array([[2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0.],
-                              [2008., 5., 7., 1., 2., 7.79, 133.17, 1003.3, 0.0, 0., 0., 0., 0., 0., 0., 0., 1.],
-                              [2008., 5., 7., 2., 2., 7.78, 133.04, 1002.7, 0.0, 0., 0., 0., 0., 0., 0., 0., 1.]])
+        should_be = [[2008,5,7,0,2,7.80,133.30,1004.0,0.0,0,0,0,0,0,0,0,0,'2008050700-200802-MTS1-1.h5',0,0.000000],
+                  [2008,5,7,1,2,7.79,133.17,1003.3,0.0,0,0,0,0,0,0,0,1,'2008050701-200802-MTS1-1.h5',0,0.000000],
+                  [2008,5,7,2,2,7.78,133.04,1002.7,0.0,0,0,0,0,0,0,0,1,'2008050702-200802-MTS1-1.h5',0,0.000000]]
 
-        if not np.array_equal(test_sequence.get_track_data(), should_be):
-            self.fail(f'Read in data does not match. Should be: \n'
-                      f'{should_be}\n'
-                      f'Program gave: \n'
-                      f'{test_sequence.get_track_data()}')
+        for row in range(len(should_be)):
+            for i in range(len(should_be[row])):
+                self.assertEqual(should_be[row][i], test_sequence.get_track_data()[row][i])
 
     def test_return_all_images_in_sequence_as_np(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=False)
 
         if len(test_sequence.images) != 5:
@@ -76,7 +74,7 @@ class TestDigitalTyphoonSequence(TestCase):
     def test_get_num_images_should_return_correct_amounts(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
         self.assertEqual(0, test_sequence.get_num_images())
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         self.assertEqual(5, test_sequence.get_num_images())
 
@@ -84,7 +82,7 @@ class TestDigitalTyphoonSequence(TestCase):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
         self.assertEqual(5, test_sequence.get_num_original_frames())
 
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         self.assertEqual(5, test_sequence.get_num_original_frames())
 
@@ -92,13 +90,13 @@ class TestDigitalTyphoonSequence(TestCase):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
         self.assertFalse(test_sequence.has_images())
 
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         self.assertTrue(test_sequence.has_images())
 
     def test_get_img_at_idx_should_return_correct_image(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         test_image = test_sequence.get_image_at_idx(4)
 
@@ -114,7 +112,7 @@ class TestDigitalTyphoonSequence(TestCase):
 
     def test_transform_func(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         test_image = test_sequence.get_image_at_idx(4)
 
@@ -130,14 +128,14 @@ class TestDigitalTyphoonSequence(TestCase):
                 self.fail(f'Value produced was {read_in_image[-1][-i - 1]}. Should be {last_values[-i - 1]}')
 
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5, transform_func=lambda img: np.ones(img.shape))
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         test_image = test_sequence.get_image_at_idx(4)
         self.assertTrue(np.array_equal(np.ones(should_be_shape), test_image.image()))
 
     def test_get_img_at_idx_as_numpy_should_return_correct_image(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         read_in_image = test_sequence.get_image_at_idx(4).image()
 
@@ -153,26 +151,27 @@ class TestDigitalTyphoonSequence(TestCase):
 
     def test_process_track_data_track_entries_should_be_assigned_to_correct_images(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
 
         image1 = test_sequence.get_image_at_idx(0)
-        self.assertTrue(np.array_equal(image1.track_array(), 
-                                       np.array([2008., 4., 13., 0., 2., 8.6, 128., 1006., 0., 0., 0., 0., 0., 0., 0., 0., 0.])))
+        should_be = [2008, 4, 13, 0, 2, 8.6, 128., 1006., 0., 0., 0., 0., 0., 0., 0., 0., 0.,'2008041300-200801-MTS1-1.h5', 0 ,0.]
+        for i in range(len(image1.track_array())):
+            self.assertEqual(image1.track_array()[i], should_be[i])
 
         image2 = test_sequence.get_image_at_idx(1)
-        self.assertTrue(np.array_equal(image2.track_array(),
-                                       np.array([2008., 4., 13., 1., 2., 8.64, 127.71, 1005.7 ,0., 0., 0., 0., 0. ,0., 0., 0., 1.])))
+        should_be = [2008,4,13,1,2,8.64,127.71,1005.7,0.0,0,0,0,0,0,0,0,1,'2008041301-200801-MTS1-1.h5',0,0.000000]
+        for i in range(len(image2.track_array())):
+            self.assertEqual(image2.track_array()[i], should_be[i])
 
         image3 = test_sequence.get_image_at_idx(2)
-        self.assertTrue(np.array_equal(image3.track_array(),
-                                       np.array(
-                                           [2008., 4., 13., 2., 2., 8.68, 127.42, 1005.3, 0., 0., 0., 0., 0., 0., 0.,
-                                            0., 1.])))
+        should_be = [2008,4,13,2,2,8.68,127.42,1005.3,0.0,0,0,0,0,0,0,0,1,'2008041302-200801-MTS1-1.h5',0,0.000000]
+        for i in range(len(image3.track_array())):
+            self.assertEqual(image3.track_array()[i], should_be[i])
 
     def test_get_all_images_in_sequence_should_return_correct_list(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         should_be = [
             'test_data_files/image/200801/2008041300-200801-MTS1-1.h5',
@@ -187,7 +186,7 @@ class TestDigitalTyphoonSequence(TestCase):
 
     def test_get_all_images_in_sequence_as_np_should_return_correct_list(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
 
         images = test_sequence.return_all_images_in_sequence_as_np()
@@ -210,20 +209,20 @@ class TestDigitalTyphoonSequence(TestCase):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
         self.assertFalse(test_sequence.num_images_match_num_frames())
 
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         self.assertTrue(test_sequence.num_images_match_num_frames())
 
     def test_sequence_filter_filters_images(self):
         # no filter
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         self.assertEqual(5, test_sequence.get_num_images())
 
         # Filter all images out
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True,
                                                         filter_func=lambda x: False)
         self.assertEqual(0, test_sequence.get_num_images())
@@ -237,7 +236,7 @@ class TestDigitalTyphoonSequence(TestCase):
             return image.lat() > 8.7
 
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
-        test_sequence.process_track_data('test_data_files/track/200801.csv')
+        test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True,
                                                         filter_func=filter_func)
 

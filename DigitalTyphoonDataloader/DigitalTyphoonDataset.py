@@ -257,7 +257,7 @@ class DigitalTyphoonDataset(Dataset):
 
     def images_from_years(self, years: List[int]):
         """
-        Given a list of years, returns a dataset Subset containing all images from that year, in order
+        Given a list of years, returns a dataset Subset containing all images from those years, in order
         :param years: List of year integers
         :return: Subset
         """

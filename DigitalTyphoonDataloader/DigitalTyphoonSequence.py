@@ -130,7 +130,8 @@ class DigitalTyphoonSequence:
         for row in data:
             row_datetime = datetime(int(row[TRACK_COLS.YEAR.value]), int(row[TRACK_COLS.MONTH.value]),
                                     int(row[TRACK_COLS.DAY.value]), int(row[TRACK_COLS.HOUR.value]))
-            self.datetime_to_image[row_datetime] = DigitalTyphoonImage(None, row, transform_func=self.transform_func)
+            self.datetime_to_image[row_datetime] = DigitalTyphoonImage(None, row, sequence_id=self.get_sequence_str(),
+                                                                       transform_func=self.transform_func)
             self.num_track_entries += 1
 
     def add_track_data(self, filename: str, csv_delimiter=',') -> None:

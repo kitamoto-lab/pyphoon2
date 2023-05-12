@@ -9,17 +9,17 @@ from DigitalTyphoonDataloader.DigitalTyphoonImage import DigitalTyphoonImage
 class TestDigitalTyphoonImage(TestCase):
     def test_initialization_should_succeed(self):
         test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041300-200801-MTS1-1.h5',
-                                         np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]))
+                                         np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0, 0, 0]))
 
     def test_initialization_load_image_into_memory_should_fail(self):
         with self.assertRaises(FileNotFoundError):
             test_image = DigitalTyphoonImage('nonexistent/file',
-                                             np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+                                             np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0, 0, 0]),
                                              load_imgs_into_mem=True)
 
     def test_initialization_load_image_into_memory_should_succeed(self):
         test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
-                                         np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+                                         np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0]),
                                          load_imgs_into_mem=True)
 
         read_in_image = test_image.image()
@@ -34,7 +34,7 @@ class TestDigitalTyphoonImage(TestCase):
 
     def test_transform_func(self):
         test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
-                                         np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+                                         np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0]),
                                          load_imgs_into_mem=True)
 
         read_in_image = test_image.image()
@@ -49,7 +49,7 @@ class TestDigitalTyphoonImage(TestCase):
                 self.fail(f'Value produced was {read_in_image[-1][-i - 1]}. Should be {last_values[-i - 1]}')
 
         test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
-                                         np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+                                         np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0]),
                                          load_imgs_into_mem=True,
                                          transform_func=lambda img: np.ones(img.shape))
 
@@ -57,16 +57,16 @@ class TestDigitalTyphoonImage(TestCase):
         self.assertTrue(np.array_equal(np.ones(shape), read_in_image))
 
     def test_give_track_entry_on_init(self):
-        should_be = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0.])
-        track_entry = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0.])
+        should_be = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0., '', 0, 0])
+        track_entry = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0., '', 0, 0])
         test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
                                          track_entry,
                                          load_imgs_into_mem=False)
         self.assertTrue(np.array_equal(should_be, test_image.track_array()))
 
     def test_give_track_entry_later_should_succeed(self):
-        should_be = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0.])
-        track_entry = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0.])
+        should_be = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0., '', 0, 0])
+        track_entry = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0., '', 0, 0])
         test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
                                          None,
                                          load_imgs_into_mem=False)
@@ -80,12 +80,13 @@ class TestDigitalTyphoonImage(TestCase):
                                              track_entry,
                                              load_imgs_into_mem=False)
         self.assertEqual(str(err.exception), f'Number of columns in the track entry (14) is not equal '
-                                             f'to expected amount (17)')
+                                             f'to expected amount (20)')
 
     def test_track_getters_return_correct_values(self):
-        track_entry = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.1, 2., 3., 4., 5., 6., 7., 8., 1])
+        track_entry = np.array([2008, 5, 7, 0, 2, 7.80, 133.30, 1004.0, 0.1, 2., 3., 4., 5., 6., 7., 8., 1, '1234', 9, 10])
         test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
                                          track_entry,
+                                         sequence_id='seq_test',
                                          load_imgs_into_mem=False)
         self.assertEqual(2008, test_image.year())
         self.assertEqual(5, test_image.month())
@@ -104,6 +105,10 @@ class TestDigitalTyphoonImage(TestCase):
         self.assertEqual(6., test_image.long30())
         self.assertEqual(7., test_image.short30())
         self.assertEqual(8., test_image.landfall())
+        self.assertEqual('test_data_files/image/200801/2008041304-200801-MTS1-1.h5', test_image.filepath())
+        self.assertEqual(9., test_image.mask_1())
+        self.assertEqual(10., test_image.mask_1_percent())
+        self.assertEqual('seq_test', test_image.sequence_id())
         self.assertTrue(test_image.interpolated())
 
 
