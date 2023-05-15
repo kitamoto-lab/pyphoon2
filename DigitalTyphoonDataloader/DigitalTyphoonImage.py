@@ -234,9 +234,9 @@ class DigitalTyphoonImage:
         :param track_entry: numpy array representing one entry of the track csv
         :return: None
         """
-        if len(track_entry) != len(TRACK_COLS):
-            raise ValueError(f'Number of columns in the track entry ({len(track_entry)}) is not equal '
-                             f'to expected amount ({len(TRACK_COLS)})')
+        # if len(track_entry) != len(TRACK_COLS):
+        #     raise ValueError(f'Number of columns in the track entry ({len(track_entry)}) is not equal '
+        #                      f'to expected amount ({len(TRACK_COLS)})')
         self.track_data = track_entry
 
     def set_image_data(self, image_filepath: str, load_imgs_into_mem=False, spectrum=None) -> None:
