@@ -582,6 +582,23 @@ class TestDigitalTyphoonDataset(TestCase):
             if read_in_image_array[-1][-i - 1] != last_values[-i - 1]:
                 self.fail(f'Value produced was {read_in_image_array[-1][-i - 1]}. Should be {last_values[-i - 1]}')
 
+    def test_get_nonempty_years_and_sequences(self):
+        def filter_func(image):
+            return image.year() != 2008
+
+        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/metadata/',
+                                             'test_data_files/metadata.json', 'grade', filter_func=filter_func, verbose=False)
+        self.assertEqual(test_dataset.get_number_of_nonempty_sequences(), 3)
+        self.assertEqual(test_dataset.get_nonempty_years(), 3)
+
+        def filter_func(image):
+            return image.sequence_id() != '200801'
+
+        test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/metadata/',
+                                             'test_data_files/metadata.json', 'grade', filter_func=filter_func, verbose=False)
+        self.assertEqual(test_dataset.get_number_of_nonempty_sequences(), 4)
+        self.assertEqual(test_dataset.get_nonempty_years(), 4)
+
 
     def test_delete_all_sequence(self):
         test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/metadata/',

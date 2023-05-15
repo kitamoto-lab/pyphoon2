@@ -104,8 +104,10 @@ class DigitalTyphoonDataset(Dataset):
         self.label = ('grade', 'lat')
 
         self.number_of_sequences = 0
+        self.number_of_nonempty_sequences = 0
         self.number_of_original_frames = 0  # Number of images in the original dataset before augmentation and removal
         self.number_of_frames = 0  # number of images in the dataset, after augmentation and removal
+        self.number_of_nonempty_years = None
 
         # Year to list of sequences that start in that year
         self.years_to_sequence_nums: OrderedDict[int, List[str]] = OrderedDict()
@@ -131,7 +133,7 @@ class DigitalTyphoonDataset(Dataset):
         :return: int
         """
         if self.get_images_by_sequence:
-            return self.get_number_of_sequences()
+            return self.get_number_of_nonempty_sequences()
         else:
             return self.number_of_frames
 
@@ -327,6 +329,13 @@ class DigitalTyphoonDataset(Dataset):
         """
         return len(self.sequences)
 
+    def get_number_of_nonempty_sequences(self):
+        """
+        Gets number of sequences (typhoons) in the dataset that have at least 1 image
+        :return: integer number of sequences
+        """
+        return self.number_of_nonempty_sequences
+
     def get_sequence_ids(self) -> List[str]:
         """
         Returns a list of the sequence ID's in the dataset, as strings
@@ -340,6 +349,27 @@ class DigitalTyphoonDataset(Dataset):
         :return: List[int]
         """
         return sorted([int(year) for year in self.years_to_sequence_nums.keys()])
+
+    def get_nonempty_years(self) -> List[int]:
+        """
+        Returns a list of the years that typhoons have started in, that have at least one image, in chronological order
+        :return: List[int]
+        """
+        if self.number_of_nonempty_years is None:
+            self.number_of_nonempty_years = 0
+            for key, seq_list in self.years_to_sequence_nums.items():
+                empty = True
+                seq_iter = 0
+                while empty and seq_iter < len(seq_list):
+                    seq_str = seq_list[seq_iter]
+                    seq_obj = self._get_seq_from_seq_str(seq_str)
+                    if seq_obj.get_num_images() > 0:
+                        self.number_of_nonempty_years += 1
+                        empty = False
+                    seq_iter += 1
+
+        return self.number_of_nonempty_years
+
 
     def sequence_exists(self, seq_str: str) -> bool:
         """
@@ -439,10 +469,14 @@ class DigitalTyphoonDataset(Dataset):
                 self.number_of_frames += sequence_obj.get_num_images()
 
         for sequence in self.sequences:
+            if sequence.get_num_images() > 0:
+                self.number_of_nonempty_sequences += 1
+
             if not sequence.num_images_match_num_frames():
                 if self.verbose:
                     warnings.warn(f'Sequence {sequence.sequence_str} has only {sequence.get_num_images()} when '
                                   f'it should have {sequence.num_frames}. If this is intended, ignore this warning.')
+
 
     def _populate_track_data_into_sequences(self, track_dir: str) -> None:
         """
@@ -581,8 +615,10 @@ class DigitalTyphoonDataset(Dataset):
         while year_iter < len(randomized_year_list):
             if len(return_indices_sorted[bucket_counter][2]) < return_indices_sorted[bucket_counter][0]:
                 for seq in self.years_to_sequence_nums[randomized_year_list[year_iter]]:
+                    sequence_obj = self._get_seq_from_seq_str(seq)
                     if self.get_images_by_sequence:
-                        return_indices_sorted[bucket_counter][2].append(self._sequence_str_to_seq_idx[seq])
+                        if sequence_obj.get_num_images() > 0:  # Only append if the sequence has images
+                            return_indices_sorted[bucket_counter][2].append(self._sequence_str_to_seq_idx[seq])
                     else:
                         return_indices_sorted[bucket_counter][2] \
                             .extend(self.seq_indices_to_total_indices(self._get_seq_from_seq_str(seq)))
