@@ -24,6 +24,7 @@ class DigitalTyphoonDataset(Dataset):
                  metadata_filepath: str,
                  labels,
                  split_dataset_by='frame',  # can be [sequence, year, frame]
+                 spectrum='Infrared',
                  get_images_by_sequence=False,
                  load_data_into_memory=False,
                  ignore_list=None,
@@ -38,6 +39,7 @@ class DigitalTyphoonDataset(Dataset):
         :param metadata_filepath: Path to the metadata JSON file
         :param split_dataset_by: What unit to treat as an atomic unit when randomly splitting the dataset. Options are
                                 "sequence", "year", or "frame" (individual image)
+        :param spectrum: Spectrum to access h5 image files with
         :param get_images_by_sequence: Boolean representing if an index should refer to an individual image or an entire
                                         sequence. If sequence, returned images are Lists of images.
         :param load_data_into_memory:  String representing if the images and track data should be entirely loaded into
@@ -82,6 +84,9 @@ class DigitalTyphoonDataset(Dataset):
         self.set_label(labels)
 
         self.verbose = verbose
+
+        # Spectrum to open images with
+        self.spectrum = spectrum
 
         # Set of image filepaths to ignore
         self.ignore_list = set(ignore_list) if ignore_list else set([])
@@ -465,7 +470,10 @@ class DigitalTyphoonDataset(Dataset):
         for root, dirs, files in os.walk(image_dir, topdown=True):
             for dir_name in sorted(dirs):  # Read sequences in chronological order, not necessary but convenient
                 sequence_obj = self._get_seq_from_seq_str(dir_name)
-                sequence_obj.process_seq_img_dir_into_sequence(root+dir_name, load_into_mem, ignore_list=self.ignore_list, filter_func=self.filter)
+                sequence_obj.process_seq_img_dir_into_sequence(root+dir_name, load_into_mem,
+                                                               ignore_list=self.ignore_list,
+                                                               filter_func=self.filter,
+                                                               spectrum=self.spectrum)
                 self.number_of_frames += sequence_obj.get_num_images()
 
         for sequence in self.sequences:
@@ -507,6 +515,7 @@ class DigitalTyphoonDataset(Dataset):
                                                      seq_start_date.year,
                                                      metadata_json['frames'],
                                                      transform_func=self.transform_func,
+                                                     spectrum=self.spectrum,
                                                      verbose=self.verbose))
         self._sequence_str_to_seq_idx[sequence_str] = len(self.sequences) - 1
 

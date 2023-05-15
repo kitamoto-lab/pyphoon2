@@ -15,7 +15,8 @@ from DigitalTyphoonDataloader.DigitalTyphoonUtils import parse_image_filename, i
 
 class DigitalTyphoonSequence:
 
-    def __init__(self, seq_str: str, start_year: int, num_frames: int, transform_func=None, verbose=False):
+    def __init__(self, seq_str: str, start_year: int, num_frames: int, transform_func=None,
+                 spectrum='infrared', verbose=False):
         """
         Class representing one typhoon sequence from the DigitalTyphoon dataset
         :param seq_str: str, sequence ID as a string
@@ -34,6 +35,7 @@ class DigitalTyphoonSequence:
         self.img_root = None  # root path to directory containing image files
         self.track_path = None  # path to track file data
         self.transform_func = transform_func
+        self.spectrum = spectrum
 
         # Ordered list containing image objects with metadata
         self.images: List[DigitalTyphoonImage] = list()
@@ -53,7 +55,7 @@ class DigitalTyphoonSequence:
     def process_seq_img_dir_into_sequence(self, directory_path: str,
                                           load_imgs_into_mem=False,
                                           ignore_list=None,
-                                          spectrum='infrared',
+                                          spectrum=None,
                                           filter_func=lambda img: True) -> None:
         """
         Given a path to a directory containing images of a typhoon sequence, process the images into the current
@@ -69,6 +71,9 @@ class DigitalTyphoonSequence:
         """
         if ignore_list is None:
             ignore_list = set([])
+
+        if spectrum is None:
+            spectrum = self.spectrum
 
         self.set_images_root_path(directory_path)
         for root, dirs, files in os.walk(directory_path, topdown=True):
@@ -131,7 +136,8 @@ class DigitalTyphoonSequence:
             row_datetime = datetime(int(row[TRACK_COLS.YEAR.value]), int(row[TRACK_COLS.MONTH.value]),
                                     int(row[TRACK_COLS.DAY.value]), int(row[TRACK_COLS.HOUR.value]))
             self.datetime_to_image[row_datetime] = DigitalTyphoonImage(None, row, sequence_id=self.get_sequence_str(),
-                                                                       transform_func=self.transform_func)
+                                                                       transform_func=self.transform_func,
+                                                                       spectrum=self.spectrum)
             self.num_track_entries += 1
 
     def add_track_data(self, filename: str, csv_delimiter=',') -> None:
@@ -179,7 +185,7 @@ class DigitalTyphoonSequence:
             raise ValueError(f'Requested idx {idx} is outside range of sequence images ({len(self.images)})')
         return self.images[idx]
 
-    def get_image_at_idx_as_numpy(self, idx: int, spectrum='infrared') -> np.ndarray:
+    def get_image_at_idx_as_numpy(self, idx: int, spectrum=None) -> np.ndarray:
         """
         Gets the idx'th image in the sequence as a numpy array. Raises an exception if the idx is outside of the
         sequence's range.
@@ -187,6 +193,8 @@ class DigitalTyphoonSequence:
         :param spectrum: str, spectrum of the image
         :return: np.ndarray, image as a numpy array with shape of the image dimensions
         """
+        if spectrum is None:
+            spectrum = self.spectrum
         return self.get_image_at_idx(idx, spectrum=spectrum).image()
 
     def get_all_images_in_sequence(self) -> List[DigitalTyphoonImage]:
@@ -196,13 +204,15 @@ class DigitalTyphoonSequence:
         """
         return self.images
 
-    def return_all_images_in_sequence_as_np(self, spectrum='infrared') -> np.ndarray:
+    def return_all_images_in_sequence_as_np(self, spectrum=None) -> np.ndarray:
         """
         Returns all the images in a sequence as a numpy array of shape (num_images, image_shape[0], image_shape[1])
         :param spectrum: str, spectrum of the image
         :return: np.ndarray of shape (num_image, image_shape[0], image_shape[1])
         """
-        return np.array([image.image() for image in self.images])
+        if spectrum is None:
+            spectrum = self.spectrum
+        return np.array([image.image(spectrum=spectrum) for image in self.images])
 
     def num_images_match_num_frames(self) -> bool:
         """

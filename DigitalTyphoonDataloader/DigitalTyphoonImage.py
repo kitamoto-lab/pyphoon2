@@ -9,7 +9,8 @@ from DigitalTyphoonDataloader.DigitalTyphoonUtils import TRACK_COLS
 
 
 class DigitalTyphoonImage:
-    def __init__(self, image_filepath: str, track_entry: np.ndarray, sequence_id=None, load_imgs_into_mem=False, transform_func=None, spectrum='infrared'):
+    def __init__(self, image_filepath: str, track_entry: np.ndarray, sequence_id=None, load_imgs_into_mem=False,
+                 transform_func=None, spectrum='infrared'):
         """
         Class for one image with metadata for the DigitalTyphoonDataset
 
@@ -18,7 +19,7 @@ class DigitalTyphoonImage:
         :param image_filepath: str, path to image file
         :param track_entry: np.ndarray, 1d numpy array for the track csv entry corresponding to the image
         :param load_imgs_into_mem: bool, flag indicating whether images should be loaded into memory
-        :param spectrum: str, spectrum to read the image in
+        :param spectrum: str, default spectrum to read the image in
         param transform_func: this function will be called on the image array when the array is accessed (or read into memory).
                                It should take and return a numpy image array
 
@@ -40,16 +41,20 @@ class DigitalTyphoonImage:
             self.set_track_data(track_entry)
 
 
-    def image(self, spectrum='infrared') -> np.ndarray:
+    def image(self, spectrum=None) -> np.ndarray:
         """
         Returns the image as a numpy array. If load_imgs_into_mem was set to true, it will cache the image
         :param spectrum: spectrum (channel) the image was taken in
         :return: np.ndarray, the image
         """
+        open_spectrum = self.spectrum
+        if spectrum is not None:
+            open_spectrum = spectrum
+
         if self.image_array is not None:
             return self.image_array
 
-        image = self._get_h5_image_as_numpy(spectrum=spectrum)
+        image = self._get_h5_image_as_numpy(spectrum=open_spectrum)
 
         if self.transform_func is not None:
             image = self.transform_func(image)
@@ -234,7 +239,7 @@ class DigitalTyphoonImage:
                              f'to expected amount ({len(TRACK_COLS)})')
         self.track_data = track_entry
 
-    def set_image_data(self, image_filepath: str, load_imgs_into_mem=False, spectrum='infrared') -> None:
+    def set_image_data(self, image_filepath: str, load_imgs_into_mem=False, spectrum=None) -> None:
         """
         Sets the image file data
         :param load_imgs_into_mem: bool, whether to load images into memory
@@ -243,18 +248,22 @@ class DigitalTyphoonImage:
         :return: None
         """
         self.load_imgs_into_mem = load_imgs_into_mem
-        self.spectrum = spectrum
+        if spectrum is None:
+            spectrum = self.spectrum
 
         self.image_filepath = image_filepath
         if self.load_imgs_into_mem:
-            self.image()  # Load the image on instantiation if load_imgs_into_mem is set to True
+            self.image(spectrum=spectrum)  # Load the image on instantiation if load_imgs_into_mem is set to True
 
-    def _get_h5_image_as_numpy(self, spectrum='infrared') -> np.ndarray:
+    def _get_h5_image_as_numpy(self, spectrum=None) -> np.ndarray:
         """
         Given an h5 image filepath, open and return the image as a numpy array
         :param spectrum: str, the spectrum of the image
         :return: np.ndarray, image as a numpy array with shape of the image dimensions
         """
+        if spectrum is None:
+            spectrum = self.spectrum
+
         with h5py.File(self.image_filepath, 'r') as h5f:
             image = np.array(h5f.get(spectrum))
         return image
