@@ -40,7 +40,6 @@ class DigitalTyphoonImage:
         if track_entry is not None:
             self.set_track_data(track_entry)
 
-
     def image(self, spectrum=None) -> np.ndarray:
         """
         Returns the image as a numpy array. If load_imgs_into_mem was set to true, it will cache the image

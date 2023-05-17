@@ -24,7 +24,7 @@ class DigitalTyphoonDataset(Dataset):
                  metadata_filepath: str,
                  labels,
                  split_dataset_by='frame',  # can be [sequence, year, frame]
-                 spectrum='Infrared',
+                 spectrum='infrared',
                  get_images_by_sequence=False,
                  load_data_into_memory=False,
                  ignore_list=None,
@@ -426,7 +426,7 @@ class DigitalTyphoonDataset(Dataset):
         """
         sequence = self._frame_idx_to_sequence[total_idx]
         start_idx = self._seq_str_to_first_total_idx[sequence.get_sequence_str()]
-        if total_idx >= self.number_of_original_frames:
+        if total_idx >= self.number_of_frames:
             raise ValueError(f'Frame {total_idx} is beyond the number of frames in the dataset.')
         return total_idx - start_idx
 
