@@ -17,13 +17,33 @@ class TestDigitalTyphoonDataset(TestCase):
 
     def test_playground(self):
 
+        class PadSequence(object):
+
+            def __init__(self, max_length):
+                self.max_length = max_length
+
+            def __call__(self, received_sample):
+                print(received_sample)
+                sample, labels = received_sample
+                sample = torch.from_numpy(sample)
+                pad_length = self.max_length - sample.size()[0]
+                pad = torch.zeros(pad_length, sample.size(1), sample.size(2))
+                sample = torch.cat((pad, sample), dim=0)
+                sample = torch.reshape(sample, [sample.size()[0], 1, sample.size()[1], sample.size()[2]])
+                return sample, [-1232131]
+
         test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",
-                                             'grade',
-                                             get_images_by_sequence=False,
-                                             spectrum='aldskjfas;lkdjf;as',
+                                             'pressure',
+                                             get_images_by_sequence=True,
+                                             split_dataset_by='frame',
+                                             spectrum='infrared',
+                                             transform=transforms.Compose([
+                                                 PadSequence(505)
+                                             ]),
                                              verbose=False)
-        print(test_dataset.get_image_from_idx(0).image(spectrum='infrared'))
+
+        print(test_dataset[0])
 
 
     def test__initialize_and_populate_images_into_sequences(self):

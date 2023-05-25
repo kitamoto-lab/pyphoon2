@@ -24,7 +24,7 @@ class DigitalTyphoonDataset(Dataset):
                  metadata_filepath: str,
                  labels,
                  split_dataset_by='frame',  # can be [sequence, year, frame]
-                 spectrum='infrared',
+                 spectrum='Infrared',
                  get_images_by_sequence=False,
                  load_data_into_memory=False,
                  ignore_list=None,
@@ -50,8 +50,8 @@ class DigitalTyphoonDataset(Dataset):
                        and return a bool True or False if it should be included in the dataset
         :param transform_func: this function will be called on the image array for each image when reading in the dataset.
                                It should take and return a numpy image array
-       :param transform: Pytorch transform func. will be called on a sample (either image array or sequence array)
-                        when getitem is called
+       :param transform: Pytorch transform func. Will be called on the tuple of (image/sequence, label array). It should
+                         take in said tuple, and return a tuple of (transformed image/sequence, transformed label)
         :param verbose: Print verbose program information
         """
 
@@ -166,14 +166,14 @@ class DigitalTyphoonDataset(Dataset):
             image_arrays = np.array([image.image() for image in images])
             labels = np.array([self._labels_from_label_strs(image, self.labels) for image in images])
             if self.transform:
-                image_arrays = self.transform(image_arrays)
+                image_arrays, labels = self.transform((image_arrays, labels))
             return image_arrays, labels
         else:
             image = self.get_image_from_idx(idx)
             labels = self._labels_from_label_strs(image, self.labels)
             ret_img = image.image()
             if self.transform:
-                ret_img = self.transform(ret_img)
+                ret_img, labels = self.transform((ret_img, labels))
             return ret_img, labels
 
     def set_label(self, label_strs) -> None:
