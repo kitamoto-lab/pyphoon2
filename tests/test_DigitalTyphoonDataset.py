@@ -30,7 +30,7 @@ class TestDigitalTyphoonDataset(TestCase):
                 pad = torch.zeros(pad_length, sample.size(1), sample.size(2))
                 sample = torch.cat((pad, sample), dim=0)
                 sample = torch.reshape(sample, [sample.size()[0], 1, sample.size()[1], sample.size()[2]])
-                return sample, [-1232131]
+                return sample, [-1232131], [-1232131]
 
         test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
                                              "test_data_files/metadata.json",

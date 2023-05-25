@@ -166,14 +166,14 @@ class DigitalTyphoonDataset(Dataset):
             image_arrays = np.array([image.image() for image in images])
             labels = np.array([self._labels_from_label_strs(image, self.labels) for image in images])
             if self.transform:
-                image_arrays, labels = self.transform((image_arrays, labels))
+                return self.transform((image_arrays, labels))
             return image_arrays, labels
         else:
             image = self.get_image_from_idx(idx)
             labels = self._labels_from_label_strs(image, self.labels)
             ret_img = image.image()
             if self.transform:
-                ret_img, labels = self.transform((ret_img, labels))
+                return self.transform((ret_img, labels))
             return ret_img, labels
 
     def set_label(self, label_strs) -> None:
