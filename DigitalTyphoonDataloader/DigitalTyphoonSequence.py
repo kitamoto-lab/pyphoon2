@@ -15,22 +15,22 @@ from DigitalTyphoonDataloader.DigitalTyphoonUtils import parse_image_filename, i
 
 class DigitalTyphoonSequence:
 
-    def __init__(self, seq_str: str, start_year: int, num_frames: int, transform_func=None,
-                 spectrum='infrared', verbose=False):
+    def __init__(self, seq_str: str, start_season: int, num_images: int, transform_func=None,
+                 spectrum='Infrared', verbose=False):
         """
         Class representing one typhoon sequence from the DigitalTyphoon dataset
         :param seq_str: str, sequence ID as a string
-        :param start_year: int, the year in which the typhoon starts in
-        :param num_frames: int, number of frames/images in the sequence
+        :param start_season: int, the season in which the typhoon starts in
+        :param num_images: int, number of images in the sequence
         :param transform_func: this function will be called on each image before saving it/returning it.
                                It should take and return a np array
         """
         self.verbose = verbose
 
         self.sequence_str = seq_str  # sequence ID string
-        self.year = start_year
+        self.season = start_season
         self.num_track_entries = 0
-        self.num_frames = num_frames
+        self.num_original_images = num_images
         self.track_data = np.array([])
         self.img_root = None  # root path to directory containing image files
         self.track_path = None  # path to track file data
@@ -88,33 +88,33 @@ class DigitalTyphoonSequence:
                         self.images.append(self.datetime_to_image[file_date])
 
         if self.verbose:
-            if not self.num_images_match_num_frames():
+            if not self.num_images_match_num_expected():
                 warnings.warn(f'The number of images ({len(self.images)}) does not match the '
-                              f'number of expected frames ({self.num_frames}). If this is expected, ignore this warning.')
+                              f'number of expected images ({self.num_original_images}) from metadata. If this is expected, ignore this warning.')
 
             if len(self.images) < self.num_track_entries:
                 warnings.warn(f'Only {len(self.images)} of {self.num_track_entries} track entries have images.')
 
-    def get_start_year(self) -> int:
+    def get_start_season(self) -> int:
         """
-        Get the start year of the sequence
-        :return: int, the start year
+        Get the start season of the sequence
+        :return: int, the start season
         """
-        return self.year
+        return self.season
 
     def get_num_images(self) -> int:
         """
-        Gets the number of frames in the sequence
+        Gets the number of images in the sequence
         :return: int
         """
         return len(self.images)
 
-    def get_num_original_frames(self) -> int:
+    def get_num_original_images(self) -> int:
         """
-        Get the number of images/frames in the sequence
-        :return: int, the number of frames
+        Get the number of images in the sequence
+        :return: int, the number of images
         """
-        return self.num_frames
+        return self.num_original_images
 
     def has_images(self) -> bool:
         """
@@ -173,7 +173,7 @@ class DigitalTyphoonSequence:
         """
         return self.track_data
 
-    def get_image_at_idx(self, idx:int, spectrum='infrared') -> DigitalTyphoonImage:
+    def get_image_at_idx(self, idx:int, spectrum='Infrared') -> DigitalTyphoonImage:
         """
         Returns the idx'th DigitalTyphoonImage in the sequence. raises an exception if the idx is out of the
         the sequence's range
@@ -214,13 +214,13 @@ class DigitalTyphoonSequence:
             spectrum = self.spectrum
         return np.array([image.image(spectrum=spectrum) for image in self.images])
 
-    def num_images_match_num_frames(self) -> bool:
+    def num_images_match_num_expected(self) -> bool:
         """
         Returns True if the number of image filepaths stored matches the number of images stated when initializing
         the sequence object. False otherwise.
         :return: bool
         """
-        return len(self.images) == self.num_frames
+        return len(self.images) == self.num_original_images
 
     def get_image_filepaths(self) -> List[str]:
         """

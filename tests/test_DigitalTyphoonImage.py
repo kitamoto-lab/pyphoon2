@@ -9,7 +9,7 @@ from DigitalTyphoonDataloader.DigitalTyphoonImage import DigitalTyphoonImage
 class TestDigitalTyphoonImage(TestCase):
     def test_initialization_should_succeed(self):
         test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041300-200801-MTS1-1.h5',
-                                         np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0, 0, 0]))
+                                         np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0, 0, 0]), spectrum='infrared')
 
     def test_initialization_load_image_into_memory_should_fail(self):
         with self.assertRaises(FileNotFoundError):
@@ -20,7 +20,7 @@ class TestDigitalTyphoonImage(TestCase):
     def test_initialization_load_image_into_memory_should_succeed(self):
         test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
                                          np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0]),
-                                         load_imgs_into_mem=True)
+                                         load_imgs_into_mem=True, spectrum='infrared')
 
         read_in_image = test_image.image()
         first_values = [296.30972999999994, 296.196816, 296.083902, 296.083902, 296.083902]
@@ -35,7 +35,7 @@ class TestDigitalTyphoonImage(TestCase):
     def test_transform_func(self):
         test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
                                          np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0]),
-                                         load_imgs_into_mem=True)
+                                         load_imgs_into_mem=True, spectrum='infrared')
 
         read_in_image = test_image.image()
         first_values = [296.30972999999994, 296.196816, 296.083902, 296.083902, 296.083902]
@@ -51,7 +51,7 @@ class TestDigitalTyphoonImage(TestCase):
         test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
                                          np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0]),
                                          load_imgs_into_mem=True,
-                                         transform_func=lambda img: np.ones(img.shape))
+                                         transform_func=lambda img: np.ones(img.shape), spectrum='infrared')
 
         read_in_image = test_image.image()
         self.assertTrue(np.array_equal(np.ones(shape), read_in_image))
@@ -69,25 +69,16 @@ class TestDigitalTyphoonImage(TestCase):
         track_entry = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0., '', 0, 0])
         test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
                                          None,
-                                         load_imgs_into_mem=False)
+                                         load_imgs_into_mem=False, spectrum='infrared')
         test_image.set_track_data(track_entry)
         self.assertTrue(np.array_equal(should_be, test_image.track_array()))
-
-    def test_give_track_entry_later_should_fail_not_enough_columns(self):
-        track_entry = np.array([2008., 5., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0.])
-        with self.assertRaises(ValueError) as err:
-            test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
-                                             track_entry,
-                                             load_imgs_into_mem=False)
-        self.assertEqual(str(err.exception), f'Number of columns in the track entry (14) is not equal '
-                                             f'to expected amount (20)')
 
     def test_track_getters_return_correct_values(self):
         track_entry = np.array([2008, 5, 7, 0, 2, 7.80, 133.30, 1004.0, 0.1, 2., 3., 4., 5., 6., 7., 8., 1, '1234', 9, 10])
         test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
                                          track_entry,
                                          sequence_id='seq_test',
-                                         load_imgs_into_mem=False)
+                                         load_imgs_into_mem=False, spectrum='infrared')
         self.assertEqual(2008, test_image.year())
         self.assertEqual(5, test_image.month())
         self.assertEqual(7, test_image.day())

@@ -69,7 +69,7 @@ class TestDigitalTyphoonSequence(TestCase):
 
     def test_get_start_year_should_return_correct_year(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
-        self.assertEqual(2008, test_sequence.get_start_year())
+        self.assertEqual(2008, test_sequence.get_start_season())
 
     def test_get_num_images_should_return_correct_amounts(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
@@ -80,11 +80,11 @@ class TestDigitalTyphoonSequence(TestCase):
 
     def test_get_num_original_frames_should_return_5(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
-        self.assertEqual(5, test_sequence.get_num_original_frames())
+        self.assertEqual(5, test_sequence.get_num_original_images())
 
         test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
-        self.assertEqual(5, test_sequence.get_num_original_frames())
+        self.assertEqual(5, test_sequence.get_num_original_images())
 
     def test_has_images_should_return_false_then_true(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
@@ -95,7 +95,7 @@ class TestDigitalTyphoonSequence(TestCase):
         self.assertTrue(test_sequence.has_images())
 
     def test_get_img_at_idx_should_return_correct_image(self):
-        test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
+        test_sequence = DigitalTyphoonSequence('200801', 2008, 5, spectrum='infrared')
         test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         test_image = test_sequence.get_image_at_idx(4)
@@ -111,7 +111,7 @@ class TestDigitalTyphoonSequence(TestCase):
                 self.fail(f'Value produced was {read_in_image[-1][-i-1]}. Should be {last_values[-i-1]}')
 
     def test_transform_func(self):
-        test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
+        test_sequence = DigitalTyphoonSequence('200801', 2008, 5, spectrum='infrared')
         test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         test_image = test_sequence.get_image_at_idx(4)
@@ -127,14 +127,14 @@ class TestDigitalTyphoonSequence(TestCase):
             if read_in_image[-1][-i - 1] != last_values[-i - 1]:
                 self.fail(f'Value produced was {read_in_image[-1][-i - 1]}. Should be {last_values[-i - 1]}')
 
-        test_sequence = DigitalTyphoonSequence('200801', 2008, 5, transform_func=lambda img: np.ones(img.shape))
+        test_sequence = DigitalTyphoonSequence('200801', 2008, 5, transform_func=lambda img: np.ones(img.shape), spectrum='infrared')
         test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         test_image = test_sequence.get_image_at_idx(4)
         self.assertTrue(np.array_equal(np.ones(should_be_shape), test_image.image()))
 
     def test_get_img_at_idx_as_numpy_should_return_correct_image(self):
-        test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
+        test_sequence = DigitalTyphoonSequence('200801', 2008, 5, spectrum='infrared')
         test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
         read_in_image = test_sequence.get_image_at_idx(4).image()
@@ -150,7 +150,7 @@ class TestDigitalTyphoonSequence(TestCase):
 
 
     def test_process_track_data_track_entries_should_be_assigned_to_correct_images(self):
-        test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
+        test_sequence = DigitalTyphoonSequence('200801', 2008, 5, spectrum='infrared')
         test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
 
@@ -185,7 +185,7 @@ class TestDigitalTyphoonSequence(TestCase):
             self.assertEqual(should_be[i], image.filepath())
 
     def test_get_all_images_in_sequence_as_np_should_return_correct_list(self):
-        test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
+        test_sequence = DigitalTyphoonSequence('200801', 2008, 5, spectrum='infrared')
         test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
 
@@ -207,11 +207,11 @@ class TestDigitalTyphoonSequence(TestCase):
 
     def test_num_images_match_num_frames(self):
         test_sequence = DigitalTyphoonSequence('200801', 2008, 5)
-        self.assertFalse(test_sequence.num_images_match_num_frames())
+        self.assertFalse(test_sequence.num_images_match_num_expected())
 
         test_sequence.process_track_data('test_data_files/metadata/200801.csv')
         test_sequence.process_seq_img_dir_into_sequence('test_data_files/image/200801/', load_imgs_into_mem=True)
-        self.assertTrue(test_sequence.num_images_match_num_frames())
+        self.assertTrue(test_sequence.num_images_match_num_expected())
 
     def test_sequence_filter_filters_images(self):
         # no filter

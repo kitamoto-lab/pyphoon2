@@ -10,7 +10,7 @@ from DigitalTyphoonDataloader.DigitalTyphoonUtils import TRACK_COLS
 
 class DigitalTyphoonImage:
     def __init__(self, image_filepath: str, track_entry: np.ndarray, sequence_id=None, load_imgs_into_mem=False,
-                 transform_func=None, spectrum='infrared'):
+                 transform_func=None, spectrum='Infrared'):
         """
         Class for one image with metadata for the DigitalTyphoonDataset
 
@@ -61,6 +61,13 @@ class DigitalTyphoonImage:
         if self.load_imgs_into_mem:
             self.image_array = image
         return image
+
+    def sequence_id(self) -> str:
+        """
+        Returns the sequence ID this image belongs to
+        :return:
+        """
+        return self.sequence_str
 
     def track_array(self) -> np.ndarray:
         """
@@ -219,13 +226,6 @@ class DigitalTyphoonImage:
         :return:
         """
         return float(self.track_data[TRACK_COLS.MASK_1_PERCENT.value])
-
-    def sequence_id(self) -> str:
-        """
-        Returns the sequence ID this image belongs to
-        :return:
-        """
-        return self.sequence_str
 
     def set_track_data(self, track_entry: np.ndarray) -> None:
         """

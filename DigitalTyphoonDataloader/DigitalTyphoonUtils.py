@@ -7,8 +7,8 @@ class SPLIT_UNIT(Enum):
     Enum denoting which unit to treat as atomic when splitting the dataset
     """
     SEQUENCE = 'sequence'
-    YEAR = 'year'
-    FRAME = 'frame'
+    SEASON = 'season'
+    IMAGE = 'image'
 
     @classmethod
     def has_value(cls, value):
@@ -129,11 +129,11 @@ def parse_image_filename(filename: str, separator='-') -> (str, datetime, str):
     :return: (str, datetime, str), Tuple containing the sequence ID, the datetime, and satellite string
     """
     date, sequence_num, satellite, _ = filename.split(separator)
-    date_year = int(date[:4])
+    season = int(date[:4])
     date_month = int(date[4:6])
     date_day = int(date[6:8])
     date_hour = int(date[8:10])
-    sequence_datetime = datetime(year=date_year, month=date_month,
+    sequence_datetime = datetime(year=season, month=date_month,
                                  day=date_day, hour=date_hour)
     return sequence_num, sequence_datetime, satellite
 
