@@ -5,7 +5,7 @@ from typing import List
 import pandas as pd
 from datetime import datetime
 
-from DigitalTyphoonDataloader.DigitalTyphoonUtils import TRACK_COLS
+from pyphoon2.DigitalTyphoonUtils import TRACK_COLS
 
 
 class DigitalTyphoonImage:

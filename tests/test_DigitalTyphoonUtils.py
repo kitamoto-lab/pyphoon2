@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from DigitalTyphoonDataloader.DigitalTyphoonUtils import *
+from pyphoon2.DigitalTyphoonUtils import *
 
 
 class TestDigitalTyphoonUtils(TestCase):

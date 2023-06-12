@@ -9,8 +9,8 @@ from typing import List, Dict
 import pandas as pd
 from collections import OrderedDict
 
-from DigitalTyphoonDataloader.DigitalTyphoonImage import DigitalTyphoonImage
-from DigitalTyphoonDataloader.DigitalTyphoonUtils import parse_image_filename, is_image_file, TRACK_COLS
+from pyphoon2.DigitalTyphoonImage import DigitalTyphoonImage
+from pyphoon2.DigitalTyphoonUtils import parse_image_filename, is_image_file, TRACK_COLS
 
 
 class DigitalTyphoonSequence:

@@ -1,4 +1,4 @@
-## Digital Typhoon Dataset Dataloader
+## pyphoon2
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
@@ -10,8 +10,8 @@ and database models for the discovery of information and knowledge useful for ty
 
 The Dataloader contained within this project addresses the first challenge. It is built for the Kitamoto Lab typhoon 
 dataset and its structure, and is designed to be a easily accessible PyTorch-based interface with the dataset. Through 
-it the user can (1) access typhoon images via index, typhoon ID, or year, (2) load all data into memory if desired, and
-(3) randomly split the dataset into buckets for model training, by image, year, or typhoon ID while preventing leakage 
+it the user can (1) access typhoon images via index, typhoon ID, or season, (2) load all data into memory if desired, and
+(3) randomly split the dataset into buckets for model training, by image, season, or typhoon ID while preventing leakage 
 between the buckets. 
 
 
@@ -32,7 +32,7 @@ This project uses:
 
 1. Clone and enter the repo 
     ```sh
-    git clone https://github.com/jared-hwang/DigitalTyphoonDataset
+    git clone https://github.com/kitamoto-lab/pyphoon2
     cd DigitalTyphoonDataset
     ```
 2. Install the package
@@ -41,7 +41,7 @@ This project uses:
     ```
 3. To uninstall, run
     ```sh
-    pip3 uninstall DigitalTyphoonDataloader
+    pip3 uninstall pyphoon2
     ```
   
 ### Usage
@@ -50,14 +50,14 @@ _Below is a brief example on how to initialize and access data using the DataLoa
 
 1. Import the Dataset class
     ```python
-    from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
+    from pyphoon2.DigitalTyphoonDataset import DigitalTyphoonDataset
     ```
    You can also import the submodules `DigitalTyphoonSequence`, `DigitalTyphoonImage`, and 
     `DigitalTyphoonUtils` in the same way if desired:
     ```python
-    from DigitalTyphoonDataloader.DigitalTyphoonSequence import DigitalTyphoonSequence
-    from DigitalTyphoonDataloader.DigitalTyphoonImage import DigitalTyphoonImage
-    from DigitalTyphoonDataloader.DigitalTyphoonUtils import *
+    from pyphoon2.DigitalTyphoonSequence import DigitalTyphoonSequence
+    from pyphoon2.DigitalTyphoonImage import DigitalTyphoonImage
+    from pyphoon2.DigitalTyphoonUtils import *
     ```
 2. Instantiate the loader
     ```python
@@ -65,7 +65,7 @@ _Below is a brief example on how to initialize and access data using the DataLoa
     dataset_obj = DigitalTyphoonDataset("/path/to/image/directory/", 
                                         "/path/to/track/directory/", 
                                         "/path/to/metadata.json", 
-                                        ('grade', 'lat', 'long'), # Default labels to return 
+                                        ('grade', 'lat', 'long'), # labels to return when indexing 
                                         split_dataset_by='sequence',
                                         load_data_into_memory=False,
                                         ignore_list=[],

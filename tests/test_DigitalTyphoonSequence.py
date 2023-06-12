@@ -1,7 +1,7 @@
 import numpy as np
 from unittest import TestCase
 
-from DigitalTyphoonDataloader.DigitalTyphoonSequence import DigitalTyphoonSequence
+from pyphoon2.DigitalTyphoonSequence import DigitalTyphoonSequence
 
 
 class TestDigitalTyphoonSequence(TestCase):

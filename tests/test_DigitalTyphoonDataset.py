@@ -9,42 +9,11 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.transforms import ToTensor, Resize
 
-from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
-from DigitalTyphoonDataloader.DigitalTyphoonSequence import DigitalTyphoonSequence
-from DigitalTyphoonDataloader.DigitalTyphoonUtils import parse_image_filename
+from pyphoon2.DigitalTyphoonDataset import DigitalTyphoonDataset
+from pyphoon2.DigitalTyphoonSequence import DigitalTyphoonSequence
+from pyphoon2.DigitalTyphoonUtils import parse_image_filename
 
 class TestDigitalTyphoonDataset(TestCase):
-
-    # def test_playground(self):
-    #
-    #     class PadSequence(object):
-    #
-    #         def __init__(self, max_length):
-    #             self.max_length = max_length
-    #
-    #         def __call__(self, received_sample):
-    #             print(received_sample)
-    #             sample, labels = received_sample
-    #             sample = torch.from_numpy(sample)
-    #             pad_length = self.max_length - sample.size()[0]
-    #             pad = torch.zeros(pad_length, sample.size(1), sample.size(2))
-    #             sample = torch.cat((pad, sample), dim=0)
-    #             sample = torch.reshape(sample, [sample.size()[0], 1, sample.size()[1], sample.size()[2]])
-    #             return sample, [-1232131], [-1232131]
-    #
-    #     test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
-    #                                          "test_data_files/metadata.json",
-    #                                          'pressure',
-    #                                          get_images_by_sequence=True,
-    #                                          split_dataset_by='image',
-    #                                          spectrum='infrared',
-    #                                          transform=transforms.Compose([
-    #                                              PadSequence(505)
-    #                                          ]),
-    #                                          verbose=False)
-    #
-    #     print(test_dataset[0])
-
 
     def test__initialize_and_populate_images_into_sequences(self):
         # tests process_metadata_file, populate_images_into_sequences, _populate_track_data_into_sequences, and

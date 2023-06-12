@@ -11,9 +11,9 @@ import torch
 from torch import default_generator, randperm, Generator
 from torch.utils.data import Dataset, Subset, random_split
 
-from DigitalTyphoonDataloader import DigitalTyphoonImage
-from DigitalTyphoonDataloader.DigitalTyphoonSequence import DigitalTyphoonSequence
-from DigitalTyphoonDataloader.DigitalTyphoonUtils import _verbose_print, SPLIT_UNIT, LOAD_DATA, TRACK_COLS, get_seq_str_from_track_filename
+from pyphoon2 import DigitalTyphoonImage
+from pyphoon2.DigitalTyphoonSequence import DigitalTyphoonSequence
+from pyphoon2.DigitalTyphoonUtils import _verbose_print, SPLIT_UNIT, LOAD_DATA, TRACK_COLS, get_seq_str_from_track_filename
 
 
 class DigitalTyphoonDataset(Dataset):

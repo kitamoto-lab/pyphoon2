@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='DigitalTyphoonDataloader',
+    name='pyphoon2',
     version='1.0.0',
     description='Dataloader for the Kitamoto Lab Digital Typhoon Dataset',
-    url='https://github.com/jared-hwang/DigitalTyphoonDataset',
+    url='https://github.com/kitamoto-lab/pyphoon2',
     author='Jared Hwang',
-    author_email='jared.hwang@gmail.com',
+    author_email='kitamoto@nii.ac.jp',
     # license='BSD 2-clause',
     packages=find_packages(),
     install_requires=['mpi4py>=2.0',

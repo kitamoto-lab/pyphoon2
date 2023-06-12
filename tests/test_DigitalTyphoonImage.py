@@ -3,7 +3,7 @@ from datetime import datetime
 import numpy as np
 from unittest import TestCase
 
-from DigitalTyphoonDataloader.DigitalTyphoonImage import DigitalTyphoonImage
+from pyphoon2.DigitalTyphoonImage import DigitalTyphoonImage
 
 
 class TestDigitalTyphoonImage(TestCase):
