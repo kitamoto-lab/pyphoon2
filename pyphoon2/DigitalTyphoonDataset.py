@@ -453,6 +453,16 @@ class DigitalTyphoonDataset(Dataset):
         seq_str = seq_obj.get_sequence_str()
         return [i + self._seq_str_to_first_total_idx[seq_str] for i in range(seq_obj.get_num_images())]
 
+    def get_image_from_idx(self, idx) -> DigitalTyphoonImage:
+        """
+        Given a dataset image idx, returns the image object from that index.
+        :param idx: int, the total dataset image idx
+        :return: DigitalTyphoonImage object for that image
+        """
+        sequence_str = self._find_sequence_str_from_image_index(idx)
+        sequence = self._get_seq_from_seq_str(sequence_str)
+        return sequence.get_image_at_idx(self.total_image_idx_to_sequence_idx(idx))
+
     def _get_list_of_sequence_objs(self) -> List[DigitalTyphoonSequence]:
         """
         Gives list of seq_str objects
@@ -714,16 +724,6 @@ class DigitalTyphoonDataset(Dataset):
         :return: the sequence string ID it belongs to
         """
         return self._image_idx_to_sequence[idx].get_sequence_str()
-
-    def get_image_from_idx(self, idx) -> DigitalTyphoonImage:
-        """
-        Given a dataset image idx, returns the image object from that index.
-        :param idx: int, the total dataset image idx
-        :return: DigitalTyphoonImage object for that image
-        """
-        sequence_str = self._find_sequence_str_from_image_index(idx)
-        sequence = self._get_seq_from_seq_str(sequence_str)
-        return sequence.get_image_at_idx(self.total_image_idx_to_sequence_idx(idx))
 
     def _get_image_from_idx_as_numpy(self, idx) -> np.ndarray:
         """

@@ -7,7 +7,7 @@ setup(
     url='https://github.com/kitamoto-lab/pyphoon2',
     author='Jared Hwang',
     author_email='kitamoto@nii.ac.jp',
-    # license='BSD 2-clause',
+    license='MIT License',
     packages=find_packages(),
     install_requires=['mpi4py>=2.0',
                       'numpy',
