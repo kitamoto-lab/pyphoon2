@@ -33,7 +33,7 @@ This project uses:
 1. Clone and enter the repo 
     ```sh
     git clone https://github.com/kitamoto-lab/pyphoon2
-    cd DigitalTyphoonDataset
+    cd pyphoon2
     ```
 2. Install the package
     ```sh
