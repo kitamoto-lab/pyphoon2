@@ -405,7 +405,7 @@ class DigitalTyphoonDataset(Dataset):
             data = json.load(f)
         self.number_of_sequences = len(data)
 
-        for sequence_str, metadata in data.items():
+        for sequence_str, metadata in sorted(data.items()):
             self._read_one_seq_from_metadata(sequence_str, metadata)
 
     def get_seq_ids_from_season(self, season: int) -> List[str]:

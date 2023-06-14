@@ -142,7 +142,7 @@ class TestDigitalTyphoonDataset(TestCase):
         test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/metadata/',
                                              'test_data_files/metadata.json', 'grade', verbose=False,
                                              spectrum='infrared')
-        read_in_image = test_dataset._get_image_from_idx_as_numpy(4)
+        read_in_image = test_dataset._get_image_from_idx_as_numpy(54)
         first_values = [296.30972999999994, 296.196816, 296.083902, 296.083902, 296.083902]
         last_values = [285.80799, 284.56569, 285.18684, 281.78588999999994, 282.0398488235294]
 
@@ -156,7 +156,7 @@ class TestDigitalTyphoonDataset(TestCase):
         test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/metadata/',
                                              'test_data_files/metadata.json', 'grade', verbose=False,
                                              spectrum='infrared')
-        read_in_image = test_dataset._get_image_from_idx_as_numpy(4)
+        read_in_image = test_dataset._get_image_from_idx_as_numpy(54)
         first_values = [296.30972999999994, 296.196816, 296.083902, 296.083902, 296.083902]
         last_values = [285.80799, 284.56569, 285.18684, 281.78588999999994, 282.0398488235294]
         should_be_shape = read_in_image.shape
@@ -210,6 +210,27 @@ class TestDigitalTyphoonDataset(TestCase):
 
         self.assertFalse(all_same)
 
+    def test_read_in_sorted_order(self):
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
+                                             "test_data_files/metadata.json",
+                                             "grade",
+                                             split_dataset_by='image',
+                                             spectrum='infrared',
+                                             verbose=False)
+        num_seq = test_dataset.get_number_of_sequences()
+        seq_strs = []
+        for i in range(num_seq):
+            seq_strs.append(test_dataset.get_ith_sequence(0).get_sequence_str())
+
+        test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
+                                             "test_data_files/metadatashuffled.json",
+                                             "grade",
+                                             split_dataset_by='image',
+                                             spectrum='infrared',
+                                             verbose=False)
+
+        for i in range(num_seq):
+            self.assertEqual(seq_strs[i], test_dataset.get_ith_sequence(0).get_sequence_str())
 
     def test_random_split_by_sequence_no_leakage(self):
         # test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
@@ -219,7 +240,6 @@ class TestDigitalTyphoonDataset(TestCase):
         #                                      verbose=False)
         test_dataset = DigitalTyphoonDataset("../data/image/", "../data/metadata/", "../data/metadata.json", 'grade',
                                              split_dataset_by='sequence', verbose=False)
-
 
         bucket1_1, bucket2_1 = test_dataset.random_split([0.7, 0.3])
         self.assertEqual(len(test_dataset), len(bucket1_1)+len(bucket2_1))
@@ -475,7 +495,7 @@ class TestDigitalTyphoonDataset(TestCase):
                                              'grade',
                                              split_dataset_by='image',
                                              verbose=False)
-        should_be = [0, 1, 2, 3, 4]
+        should_be = [50, 51, 52, 53, 54]
         sequence = test_dataset._get_seq_from_seq_str('200801')
         return_indices = test_dataset.seq_indices_to_total_indices(sequence)
         self.assertEqual(should_be, return_indices)
@@ -488,7 +508,7 @@ class TestDigitalTyphoonDataset(TestCase):
                                              verbose=False)
         self.assertEqual(5, len(test_dataset._get_list_of_sequence_objs()))
         sequence_names = [seq.sequence_str for seq in test_dataset._get_list_of_sequence_objs()]
-        self.assertEqual(['200801', '200802','197918', '201323', '202222'], sequence_names)
+        self.assertEqual(['197918', '200801', '200802', '201323', '202222'], sequence_names)
 
     def test_assign_all_images_dataset_idx(self):
         test_dataset = DigitalTyphoonDataset("test_data_files/image/", "test_data_files/metadata/",
@@ -539,8 +559,8 @@ class TestDigitalTyphoonDataset(TestCase):
                                              'grade',
                                              split_dataset_by='image',
                                              verbose=False)
-        self.assertEqual('200801', test_dataset._find_sequence_str_from_image_index(0))
-        self.assertEqual('200802', test_dataset._find_sequence_str_from_image_index(6))
+        self.assertEqual('197918', test_dataset._find_sequence_str_from_image_index(0))
+        self.assertEqual('200801', test_dataset._find_sequence_str_from_image_index(51))
 
     def test_get_image_from_idx(self):
         test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/metadata/',
@@ -553,7 +573,7 @@ class TestDigitalTyphoonDataset(TestCase):
     def test_get_image_from_idx_as_numpy(self):
         test_dataset = DigitalTyphoonDataset('test_data_files/image/', 'test_data_files/metadata/',
                                              'test_data_files/metadata.json', 'grade', spectrum='infrared', verbose=False)
-        read_in_image_array = test_dataset._get_image_from_idx_as_numpy(4)
+        read_in_image_array = test_dataset._get_image_from_idx_as_numpy(54)
         first_values = [296.30972999999994, 296.196816, 296.083902, 296.083902, 296.083902]
         last_values = [285.80799, 284.56569, 285.18684, 281.78588999999994, 282.0398488235294]
 
