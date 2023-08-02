@@ -63,7 +63,7 @@ _Below is a brief example on how to initialize and access data using the DataLoa
     ```python
     # See the documentation for description of the optional parameters. 
     dataset_obj = DigitalTyphoonDataset("/path/to/image/directory/", 
-                                        "/path/to/track/directory/", 
+                                        "/path/to/metadata/directory/", 
                                         "/path/to/metadata.json", 
                                         ('grade', 'lat', 'long'), # labels to return when indexing 
                                         split_dataset_by='sequence',

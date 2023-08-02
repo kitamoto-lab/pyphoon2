@@ -11,7 +11,7 @@ import torch
 from torch import default_generator, randperm, Generator
 from torch.utils.data import Dataset, Subset, random_split
 
-from pyphoon2 import DigitalTyphoonImage
+from pyphoon2.DigitalTyphoonImage import DigitalTyphoonImage
 from pyphoon2.DigitalTyphoonSequence import DigitalTyphoonSequence
 from pyphoon2.DigitalTyphoonUtils import _verbose_print, SPLIT_UNIT, LOAD_DATA, TRACK_COLS, get_seq_str_from_track_filename
 
@@ -20,8 +20,8 @@ class DigitalTyphoonDataset(Dataset):
 
     def __init__(self,
                  image_dir: str,
-                 track_dir: str,
-                 metadata_filepath: str,
+                 metadata_dir: str,
+                 metadata_json: str,
                  labels,
                  split_dataset_by='image',  # can be [sequence, season, image]
                  spectrum='Infrared',
@@ -34,9 +34,10 @@ class DigitalTyphoonDataset(Dataset):
                  verbose=False) -> None:
         """
         Dataloader for the DigitalTyphoon dataset.
+
         :param image_dir: Path to directory containing directories of typhoon sequences
-        :param track_dir: Path to directory containing track data for typhoon sequences
-        :param metadata_filepath: Path to the metadata JSON file
+        :param metadata_dir: Path to directory containing track data for typhoon sequences
+        :param metadata_json: Path to the metadata JSON file
         :param split_dataset_by: What unit to treat as an atomic unit when randomly splitting the dataset. Options are
                                 "sequence", "season", or "image" (individual image)
         :param spectrum: Spectrum to access h5 image files with
@@ -74,10 +75,10 @@ class DigitalTyphoonDataset(Dataset):
 
         # Directories containing image folders and track data
         self.image_dir = image_dir
-        self.track_dir = track_dir
+        self.metadata_dir = metadata_dir
 
         # Path to the metadata file
-        self.metadata_filepath = metadata_filepath
+        self.metadata_json = metadata_json
 
         # labels to retrieve when accessing the dataset
         self.labels = None
@@ -119,11 +120,11 @@ class DigitalTyphoonDataset(Dataset):
 
         # Process the data into the loader
         # It must happen in this order!
-        _verbose_print(f'Processing metadata file at: {metadata_filepath}', self.verbose)
-        self.process_metadata_file(metadata_filepath)
+        _verbose_print(f'Processing metadata file at: {metadata_json}', self.verbose)
+        self.process_metadata_file(metadata_json)
 
-        _verbose_print(f'Initializing track data from: {track_dir}', self.verbose)
-        self._populate_track_data_into_sequences(self.track_dir)
+        _verbose_print(f'Initializing track data from: {metadata_dir}', self.verbose)
+        self._populate_track_data_into_sequences(self.metadata_dir)
 
         _verbose_print(f'Initializing image_arrays from: {image_dir}', self.verbose)
         self._populate_images_into_sequences(self.image_dir)
@@ -135,6 +136,7 @@ class DigitalTyphoonDataset(Dataset):
         """
         Gives the length of the dataset. If "get_images_by_sequence" was set to True on initialization, number of
         sequences is returned. Otherwise, number of images is returned.
+        
         :return: int
         """
         if self.get_images_by_sequence:
@@ -180,8 +182,8 @@ class DigitalTyphoonDataset(Dataset):
         """
         Sets what label to retrieve when accessing the data set via dataset[idx] or dataset.__getitem__(idx)
         Options are:
-            season, month, day, hour, grade, lat, lng, pressure, wind, dir50, long50, short50,
-            dir30, long30, short30, landfall, interpolated
+        season, month, day, hour, grade, lat, lng, pressure, wind, dir50, long50, short50, dir30, long30, short30, landfall, interpolated
+      
         :param label_strs: a single string (e.g. 'grade') or a list/tuple of strings (e.g. ['lat', 'lng']) of labels.
         :return: None
         """
@@ -241,6 +243,7 @@ class DigitalTyphoonDataset(Dataset):
     def images_from_season(self, season: int) -> Subset:
         """
         Given a start season, return a Subset (Dataset) object containing all the images from that season, in order
+        
         :param season: the start season as a string
         :return: Subset
         """
@@ -254,6 +257,7 @@ class DigitalTyphoonDataset(Dataset):
     def image_objects_from_season(self, season: int) -> List:
         """
         Given a start season, return a list of DigitalTyphoonImage objects for images from that season
+        
         :param season: the start season as a string
         :return: List[DigitalTyphoonImage]
         """
@@ -267,6 +271,7 @@ class DigitalTyphoonDataset(Dataset):
     def images_from_seasons(self, seasons: List[int]):
         """
         Given a list of seasons, returns a dataset Subset containing all images from those seasons, in order
+
         :param seasons: List of season integers
         :return: Subset
         """
@@ -281,6 +286,7 @@ class DigitalTyphoonDataset(Dataset):
     def images_from_sequence(self, sequence_str: str) -> Subset:
         """
         Given a sequence ID, returns a Subset of the dataset of the images in that sequence
+
         :param sequence_str: str, the sequence ID
         :return: Subset of the total dataset
         """
@@ -291,6 +297,7 @@ class DigitalTyphoonDataset(Dataset):
     def image_objects_from_sequence(self, sequence_str: str) -> List:
         """
         Given a sequence ID, returns a list of the DigitalTyphoonImage objects in the sequence in chronological order.
+
         :param sequence_str:
         :return: List[DigitalTyphoonImage]
         """
@@ -301,6 +308,7 @@ class DigitalTyphoonDataset(Dataset):
         """
         Given a list of sequence IDs, returns a dataset Subset containing all the images within the
         sequences, in order
+
         :param sequence_strs: List[str], the sequence IDs
         :return: Subset of the total dataset
         """
@@ -313,6 +321,7 @@ class DigitalTyphoonDataset(Dataset):
     def images_as_tensor(self, indices: List[int]) -> torch.Tensor:
         """
         Given a list of dataset indices, returns the images as a Torch Tensor
+
         :param indices: List[int]
         :return: torch Tensor
         """
@@ -322,6 +331,7 @@ class DigitalTyphoonDataset(Dataset):
     def labels_as_tensor(self, indices: List[int], label: str) -> torch.Tensor:
         """
         Given a list of dataset indices, returns the specified labels as a Torch Tensor
+
         :param indices: List[int]
         :param label: str, denoting which label to retrieve
         :return: torch Tensor
@@ -332,6 +342,7 @@ class DigitalTyphoonDataset(Dataset):
     def get_number_of_sequences(self):
         """
         Gets number of sequences (typhoons) in the dataset
+
         :return: integer number of sequences
         """
         return len(self.sequences)
@@ -339,6 +350,7 @@ class DigitalTyphoonDataset(Dataset):
     def get_number_of_nonempty_sequences(self):
         """
         Gets number of sequences (typhoons) in the dataset that have at least 1 image
+
         :return: integer number of sequences
         """
         return self.number_of_nonempty_sequences
@@ -346,6 +358,7 @@ class DigitalTyphoonDataset(Dataset):
     def get_sequence_ids(self) -> List[str]:
         """
         Returns a list of the sequence ID's in the dataset, as strings
+
         :return: List[str]
         """
         return list(self._sequence_str_to_seq_idx.keys())
@@ -353,6 +366,7 @@ class DigitalTyphoonDataset(Dataset):
     def get_seasons(self) -> List[int]:
         """
         Returns a list of the seasons that typhoons have started in chronological order
+
         :return: List[int]
         """
         return sorted([int(season) for season in self.season_to_sequence_nums.keys()])
@@ -360,6 +374,7 @@ class DigitalTyphoonDataset(Dataset):
     def get_nonempty_seasons(self) -> List[int]:
         """
         Returns a list of the seasons that typhoons have started in, that have at least one image, in chronological order
+        
         :return: List[int]
         """
         if self.number_of_nonempty_seasons is None:
@@ -380,6 +395,7 @@ class DigitalTyphoonDataset(Dataset):
     def sequence_exists(self, seq_str: str) -> bool:
         """
         Returns if a seq_str with given seq_str number exists in the dataset
+
         :param seq_str: string of the seq_str ID
         :return: Boolean True if present, False otherwise
         """
@@ -388,6 +404,7 @@ class DigitalTyphoonDataset(Dataset):
     def get_ith_sequence(self, idx: int) -> DigitalTyphoonSequence:
         """
         Given an index idx, returns the idx'th sequence in the dataset
+
         :param idx: int index
         :return: DigitalTyphoonSequence
         """
@@ -398,6 +415,7 @@ class DigitalTyphoonDataset(Dataset):
     def process_metadata_file(self, filepath: str):
         """
         Reads and processes JSON metadata file's information into dataset.
+
         :param filepath: path to metadata file
         :return: metadata JSON object
         """
@@ -411,6 +429,7 @@ class DigitalTyphoonDataset(Dataset):
     def get_seq_ids_from_season(self, season: int) -> List[str]:
         """
         Given a start season, give the sequence ID strings of all sequences that start in that season.
+
         :param season: the start season as a string
         :return: a list of the sequence IDs starting in that season
         """
@@ -422,6 +441,7 @@ class DigitalTyphoonDataset(Dataset):
         """
         Given a total dataset image index, returns that image's index in its respective sequence. e.g. an image that is
         the 500th in the total dataset may be the 5th image in its sequence.
+
         :param total_idx: the total dataset image index
         :return: the inner-sequence image index.
         """
@@ -435,6 +455,7 @@ class DigitalTyphoonDataset(Dataset):
         """
         Given an image with seq_idx position within its sequence, return its total idx within the greater dataset. e.g.
         an image that is the 5th image in the sequence may be the 500th in the total dataset.
+
         :param seq_str: The sequence ID string to search within
         :param seq_idx: int, the index within the given sequence
         :return: int, the total index within the dataset
@@ -447,6 +468,7 @@ class DigitalTyphoonDataset(Dataset):
     def seq_indices_to_total_indices(self, seq_obj: DigitalTyphoonSequence) -> List[int]:
         """
         Given a sequence, return a list of the total dataset indices of the sequence's images.
+
         :param seq_obj: the DigitalTyphoonSequence object to produce the list from
         :return: the List of total dataset indices
         """
@@ -456,6 +478,7 @@ class DigitalTyphoonDataset(Dataset):
     def get_image_from_idx(self, idx) -> DigitalTyphoonImage:
         """
         Given a dataset image idx, returns the image object from that index.
+
         :param idx: int, the total dataset image idx
         :return: DigitalTyphoonImage object for that image
         """
@@ -474,6 +497,7 @@ class DigitalTyphoonDataset(Dataset):
         """
         Traverses the image directory and populates each of the images sequentially into their respective seq_str
         objects.
+
         :param image_dir: path to directory containing directory of typhoon images.
         :return: None
         """
@@ -496,13 +520,14 @@ class DigitalTyphoonDataset(Dataset):
                     warnings.warn(f'Sequence {sequence.sequence_str} has only {sequence.get_num_images()} when '
                                   f'it should have {sequence.num_original_images}. If this is intended, ignore this warning.')
 
-    def _populate_track_data_into_sequences(self, track_dir: str) -> None:
+    def _populate_track_data_into_sequences(self, metadata_dir: str) -> None:
         """
         Traverses the track data files and populates each into their respective seq_str objects
-        :param track_dir: path to directory containing track data files
+
+        :param metadata_dir: path to directory containing track data files
         :return: None
         """
-        for root, dirs, files in os.walk(track_dir, topdown=True):
+        for root, dirs, files in os.walk(metadata_dir, topdown=True):
             for file in sorted(files):
                 file_sequence = get_seq_str_from_track_filename(file)
                 if self.sequence_exists(file_sequence):
@@ -514,6 +539,7 @@ class DigitalTyphoonDataset(Dataset):
                                     metadata_json: Dict):
         """
         Processes one seq_str from the metadata JSON object.
+
         :param sequence_str: string of the seq_str ID
         :param metadata_json: JSON object from metadata file
         :param prev_interval_end: the final image index of the previous seq_str
@@ -550,6 +576,7 @@ class DigitalTyphoonDataset(Dataset):
     def _read_in_track_file_to_sequence(self, seq_str: str, file: str, csv_delimiter=',') -> DigitalTyphoonSequence:
         """
         Processes one track file into its seq_str.
+
         :param seq_str: string of the seq_str ID
         :param file: path to the track file
         :param csv_delimiter: delimiter used in the track csv files
@@ -712,6 +739,7 @@ class DigitalTyphoonDataset(Dataset):
     def _get_seq_from_seq_str(self, seq_str: str) -> DigitalTyphoonSequence:
         """
         Gets a sequence object from the sequence ID string
+
         :param seq_str: sequence ID string
         :return: DigitalTyphoonSequence object corresponding to the Sequence string
         """
@@ -720,6 +748,7 @@ class DigitalTyphoonDataset(Dataset):
     def _find_sequence_str_from_image_index(self, idx: int) -> str:
         """
         Given an image index from the whole dataset, returns the sequence ID it belongs to
+
         :param idx: int, the total dataset image idx
         :return: the sequence string ID it belongs to
         """
@@ -728,6 +757,7 @@ class DigitalTyphoonDataset(Dataset):
     def _get_image_from_idx_as_numpy(self, idx) -> np.ndarray:
         """
         Given a dataset image idx, return the image as a numpy array.
+
         :param idx: int, the total dataset image idx
         :return: numpy array of the image, with shape of the image's dimensions
         """
@@ -739,6 +769,7 @@ class DigitalTyphoonDataset(Dataset):
         """
         Given an image and the label/labels to retrieve from the image, returns a single label or
         a list of labels
+
         :param image: image to access labels for
         :param label_strs: either a List of label strings or a single label string
         :return: a List of label strings or a single label string

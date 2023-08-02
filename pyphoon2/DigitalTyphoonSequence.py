@@ -19,6 +19,7 @@ class DigitalTyphoonSequence:
                  spectrum='Infrared', verbose=False):
         """
         Class representing one typhoon sequence from the DigitalTyphoon dataset
+
         :param seq_str: str, sequence ID as a string
         :param start_season: int, the season in which the typhoon starts in
         :param num_images: int, number of images in the sequence
@@ -48,6 +49,7 @@ class DigitalTyphoonSequence:
     def get_sequence_str(self) -> str:
         """
         Returns the sequence ID as a string
+
         :return: string sequence ID
         """
         return self.sequence_str
@@ -98,6 +100,7 @@ class DigitalTyphoonSequence:
     def get_start_season(self) -> int:
         """
         Get the start season of the sequence
+
         :return: int, the start season
         """
         return self.season
@@ -105,6 +108,7 @@ class DigitalTyphoonSequence:
     def get_num_images(self) -> int:
         """
         Gets the number of images in the sequence
+
         :return: int
         """
         return len(self.images)
@@ -112,6 +116,7 @@ class DigitalTyphoonSequence:
     def get_num_original_images(self) -> int:
         """
         Get the number of images in the sequence
+
         :return: int, the number of images
         """
         return self.num_original_images
@@ -119,6 +124,7 @@ class DigitalTyphoonSequence:
     def has_images(self) -> bool:
         """
         Returns true if the sequence currently holds images (or image filepaths). False otherwise.
+
         :return: bool
         """
         return len(self.images) != 0
@@ -126,6 +132,7 @@ class DigitalTyphoonSequence:
     def process_track_data(self, track_filepath: str, csv_delimiter=',') -> None:
         """
         Takes in the track data for the sequence and processes it into the images for the sequence.
+
         :param track_filepath: str, path to track csv
         :param csv_delimiter: delimiter for the csv file
         :return: None
@@ -143,6 +150,7 @@ class DigitalTyphoonSequence:
     def add_track_data(self, filename: str, csv_delimiter=',') -> None:
         """
         Reads and adds the track data to the sequence.
+
         :param filename: str, path to the track data
         :param csv_delimiter: char, delimiter to use to read the csv
         :return: None
@@ -153,6 +161,7 @@ class DigitalTyphoonSequence:
     def set_track_path(self, track_path: str) -> None:
         """
         Sets the path to the track data file
+
         :param track_path: str, filepath to the track data
         :return: None
         """
@@ -162,6 +171,7 @@ class DigitalTyphoonSequence:
     def get_track_path(self) -> str:
         """
         Gets the path to the track data file
+
         :return: str, the path to the track data file
         """
         return self.track_path
@@ -169,6 +179,7 @@ class DigitalTyphoonSequence:
     def get_track_data(self) -> np.ndarray:
         """
         Returns the track csv data as a numpy array, with each row corresponding to a row in the CSV.
+
         :return: np.ndarray
         """
         return self.track_data
@@ -177,6 +188,7 @@ class DigitalTyphoonSequence:
         """
         Returns the idx'th DigitalTyphoonImage in the sequence. raises an exception if the idx is out of the
         the sequence's range
+
         :param idx: int, idx to access
         :param spectrum: str, spectrum of the image
         :return: DigitalTyphoonImage, the image object
@@ -189,6 +201,7 @@ class DigitalTyphoonSequence:
         """
         Gets the idx'th image in the sequence as a numpy array. Raises an exception if the idx is outside of the
         sequence's range.
+
         :param idx: int, idx to access
         :param spectrum: str, spectrum of the image
         :return: np.ndarray, image as a numpy array with shape of the image dimensions
@@ -200,6 +213,7 @@ class DigitalTyphoonSequence:
     def get_all_images_in_sequence(self) -> List[DigitalTyphoonImage]:
         """
         Returns all of the image objects (DigitalTyphoonImage) in the sequence in order.
+
         :return: List[DigitalTyphoonImage]
         """
         return self.images
@@ -207,6 +221,7 @@ class DigitalTyphoonSequence:
     def return_all_images_in_sequence_as_np(self, spectrum=None) -> np.ndarray:
         """
         Returns all the images in a sequence as a numpy array of shape (num_images, image_shape[0], image_shape[1])
+
         :param spectrum: str, spectrum of the image
         :return: np.ndarray of shape (num_image, image_shape[0], image_shape[1])
         """
@@ -218,6 +233,7 @@ class DigitalTyphoonSequence:
         """
         Returns True if the number of image filepaths stored matches the number of images stated when initializing
         the sequence object. False otherwise.
+
         :return: bool
         """
         return len(self.images) == self.num_original_images
@@ -225,6 +241,7 @@ class DigitalTyphoonSequence:
     def get_image_filepaths(self) -> List[str]:
         """
         Returns a list of the filenames of the images (without the root path)
+
         :return: List[str], list of the filenames
         """
         return [image.filepath() for image in self.images]
@@ -232,6 +249,7 @@ class DigitalTyphoonSequence:
     def set_images_root_path(self, images_root_path: str) -> None:
         """
         Sets the root path of the images.
+
         :param images_root_path: str, the root path
         :return: None
         """
@@ -240,6 +258,7 @@ class DigitalTyphoonSequence:
     def get_images_root_path(self) -> str:
         """
         Gets the root path to the image directory
+        
         :return: str, the root path
         """
         return str(self.img_root)

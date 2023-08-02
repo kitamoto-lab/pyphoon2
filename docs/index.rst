@@ -1,22 +1,45 @@
-Welcome to Lumache's documentation!
-===================================
+.. pyphoon2 documentation master file, created by
+   sphinx-quickstart on Mon Jul 31 14:27:31 2023.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
 
-**Lumache** (/lu'make/) is a Python library for cooks and food lovers
-that creates recipes mixing random ingredients.
-It pulls data from the `Open Food Facts database <https://world.openfoodfacts.org/>`_
-and offers a *simple* and *intuitive* API.
-
-Check out the :doc:`usage` section for further information, including
-how to :ref:`installation` the project.
-
-.. note::
-
-   This project is under active development.
-
-Contents
---------
+Welcome to pyphoon2's documentation!
+====================================
 
 .. toctree::
+   :maxdepth: 1
+   :caption: Getting Started
 
-   usage
-   api
+   installation_example
+
+   quick_start
+
+   model_example_1
+
+   model_example_2
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Projects
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Modules
+
+   DigitalTyphoonDataset
+
+   DigitalTyphoonSequence
+
+   DigitalTyphoonImage
+
+   DigitalTyphoonUtils
+
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`

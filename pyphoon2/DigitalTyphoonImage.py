@@ -43,6 +43,7 @@ class DigitalTyphoonImage:
     def image(self, spectrum=None) -> np.ndarray:
         """
         Returns the image as a numpy array. If load_imgs_into_mem was set to true, it will cache the image
+
         :param spectrum: spectrum (channel) the image was taken in
         :return: np.ndarray, the image
         """
@@ -65,24 +66,32 @@ class DigitalTyphoonImage:
     def sequence_id(self) -> str:
         """
         Returns the sequence ID this image belongs to
-        :return:
+
+        :return: str sequence str
         """
         return self.sequence_str
 
     def track_array(self) -> np.ndarray:
         """
         Returns the csv row for this image
+
         :return: nparray containing the track data
         """
         return self.track_data
 
     def value_from_string(self, label):
+        """
+        Returns the image's value given the label as a string. e.g. value_from_string('month') -> the month
+
+        :return: the element
+        """
         label_name = TRACK_COLS.str_to_value(label)
         return self.track_array()[label_name]
 
     def year(self) -> int:
         """
         Returns the year the image was taken
+
         :return: int, the year
         """
         return int(self.track_data[TRACK_COLS.YEAR.value])
@@ -90,6 +99,7 @@ class DigitalTyphoonImage:
     def month(self) -> int:
         """
         Returns the month the image was taken
+
         :return: int, the month (1-12)
         """
         return int(self.track_data[TRACK_COLS.MONTH.value])
@@ -97,13 +107,15 @@ class DigitalTyphoonImage:
     def day(self) -> int:
         """
         Returns the day the image was taken (number 1-31)
-        :return:
+
+        :return: int the day
         """
         return int(self.track_data[TRACK_COLS.DAY.value])
 
     def hour(self) -> int:
         """
         Returns the hour the image was taken
+
         :return: int, the hour
         """
         return int(self.track_data[TRACK_COLS.HOUR.value])
@@ -111,6 +123,7 @@ class DigitalTyphoonImage:
     def datetime(self) -> datetime:
         """
         Returns a datetime object of when the image was taken
+
         :return: datetime
         """
         return datetime(self.year(), self.month(), self.day(), self.hour())
@@ -118,6 +131,7 @@ class DigitalTyphoonImage:
     def grade(self) -> int:
         """
         Returns the grade of the typhoon in the image
+
         :return: int, the grade
         """
         return int(self.track_data[TRACK_COLS.GRADE.value])
@@ -125,6 +139,7 @@ class DigitalTyphoonImage:
     def lat(self) -> float:
         """
         Returns the latitude of the image
+
         :return: float
         """
         return float(self.track_data[TRACK_COLS.LAT.value])
@@ -132,6 +147,7 @@ class DigitalTyphoonImage:
     def long(self) -> float:
         """
         Returns the longitude of the image
+
         :return: float
         """
         return float(self.track_data[TRACK_COLS.LNG.value])
@@ -139,6 +155,7 @@ class DigitalTyphoonImage:
     def pressure(self) -> float:
         """
         Returns the pressure in # TODO: units? probably hg
+
         :return: float
         """
         return float(self.track_data[TRACK_COLS.PRESSURE.value])
@@ -146,6 +163,7 @@ class DigitalTyphoonImage:
     def wind(self) -> float:
         """
         Returns the wind speed in # TODO: units?
+
         :return: float
         """
         return float(self.track_data[TRACK_COLS.WIND.value])
@@ -153,6 +171,7 @@ class DigitalTyphoonImage:
     def dir50(self) -> float:
         """
         # TODO: what is this?
+
         :return: float
         """
         return float(self.track_data[TRACK_COLS.DIR50.value])
@@ -160,6 +179,7 @@ class DigitalTyphoonImage:
     def long50(self) -> float:
         """
         # TODO: what is this?
+
         :return: float
         """
         return float(self.track_data[TRACK_COLS.LONG50.value])
@@ -167,6 +187,7 @@ class DigitalTyphoonImage:
     def short50(self) -> float:
         """
         # TODO: what is this?
+
         :return: float
         """
         return float(self.track_data[TRACK_COLS.SHORT50.value])
@@ -174,6 +195,7 @@ class DigitalTyphoonImage:
     def dir30(self) -> float:
         """
         # TODO: what is this?
+
         :return: float
         """
         return float(self.track_data[TRACK_COLS.DIR30.value])
@@ -181,6 +203,7 @@ class DigitalTyphoonImage:
     def long30(self) -> float:
         """
         # TODO: what is this?
+
         :return: float
         """
         return float(self.track_data[TRACK_COLS.LONG30.value])
@@ -188,6 +211,7 @@ class DigitalTyphoonImage:
     def short30(self) -> float:
         """
         # TODO: what is this?
+
         :return: float
         """
         return float(self.track_data[TRACK_COLS.SHORT30.value])
@@ -195,6 +219,7 @@ class DigitalTyphoonImage:
     def landfall(self) -> float:
         """
         # TODO: what is this?
+
         :return: float
         """
         return float(self.track_data[TRACK_COLS.LANDFALL.value])
@@ -202,6 +227,7 @@ class DigitalTyphoonImage:
     def interpolated(self) -> bool:
         """
         Returns whether this entry is interpolated or not
+
         :return: bool
         """
         return bool(self.track_data[TRACK_COLS.INTERPOLATED.value])
@@ -209,6 +235,7 @@ class DigitalTyphoonImage:
     def filepath(self) -> str:
         """
         Returns the filepath to the image
+
         :return: str
         """
         return str(self.image_filepath)
@@ -216,20 +243,23 @@ class DigitalTyphoonImage:
     def mask_1(self) -> float:
         """
         Returns number of pixels in the image that are corrupted
-        :return:
+
+        :return: float the number of pixels
         """
         return float(self.track_data[TRACK_COLS.MASK_1.value])
 
     def mask_1_percent(self) -> float:
         """
         Returns percentage of pixels in the image that are corrupted
-        :return:
+
+        :return: float the percentage of pixels
         """
         return float(self.track_data[TRACK_COLS.MASK_1_PERCENT.value])
 
     def set_track_data(self, track_entry: np.ndarray) -> None:
         """
         Sets the track entry
+
         :param track_entry: numpy array representing one entry of the track csv
         :return: None
         """
@@ -241,6 +271,7 @@ class DigitalTyphoonImage:
     def set_image_data(self, image_filepath: str, load_imgs_into_mem=False, spectrum=None) -> None:
         """
         Sets the image file data
+
         :param load_imgs_into_mem: bool, whether to load images into memory
         :param spectrum: str, spectrum to open h5 images with
         :param image_filepath: string to image
@@ -257,6 +288,7 @@ class DigitalTyphoonImage:
     def _get_h5_image_as_numpy(self, spectrum=None) -> np.ndarray:
         """
         Given an h5 image filepath, open and return the image as a numpy array
+        
         :param spectrum: str, the spectrum of the image
         :return: np.ndarray, image as a numpy array with shape of the image dimensions
         """
