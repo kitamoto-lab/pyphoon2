@@ -27,6 +27,7 @@ html_static_path = ['_static']
 # Path setup
 import os 
 import sys
+sys.path.insert(0, os.path.abspath('../'))
 sys.path.insert(0, os.path.abspath('../pyphoon2'))
 
 
