@@ -14,6 +14,7 @@ it the user can (1) access typhoon images via index, typhoon ID, or season, (2) 
 (3) randomly split the dataset into buckets for model training, by image, season, or typhoon ID while preventing leakage 
 between the buckets. 
 
+See readthedocs documentation [here](https://pyphoon2.readthedocs.io/en/latest/).
 
 <!-- GETTING STARTED -->
 ## Getting Started
