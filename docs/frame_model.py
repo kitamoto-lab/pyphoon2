@@ -1,3 +1,9 @@
+# autopep8: off
+import os
+import sys
+import os.path
+sys.path.insert(0, os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..')))
 import torch
 from torch import nn
 from torch import optim
@@ -10,7 +16,7 @@ import argparse
 from pathlib import Path
 from torch.utils.data import DataLoader
 
-from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
+from pyphoon2.DigitalTyphoonDataset import DigitalTyphoonDataset
 
 def main(args):
 
@@ -112,7 +118,7 @@ def main(args):
 
             # Calculate the loss
             loss = criterion(predictions, labels)
-        
+
             # backward pass
             loss.backward()
             # update weights

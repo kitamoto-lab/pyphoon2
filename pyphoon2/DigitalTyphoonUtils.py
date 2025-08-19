@@ -1,5 +1,7 @@
+import os
 from datetime import datetime
 from enum import Enum
+from typing import Tuple
 
 
 class SPLIT_UNIT(Enum):
@@ -62,46 +64,30 @@ class TRACK_COLS(Enum):
 
     @classmethod
     def str_to_value(cls, name):
-        if name == 'year':
-            return TRACK_COLS.YEAR.value
-        elif name == 'month':
-            return TRACK_COLS.MONTH.value
-        elif name == 'day':
-            return TRACK_COLS.DAY.value
-        elif name == 'hour':
-            return TRACK_COLS.HOUR.value
-        elif name == 'grade':
-            return TRACK_COLS.GRADE.value
-        elif name == 'lat':
-            return TRACK_COLS.LAT.value
-        elif name == 'lng':
-            return TRACK_COLS.LNG.value
-        elif name == 'pressure':
-            return TRACK_COLS.PRESSURE.value
-        elif name == 'wind':
-            return TRACK_COLS.WIND.value
-        elif name == 'dir50':
-            return TRACK_COLS.DIR50.value
-        elif name == 'long50':
-            return TRACK_COLS.LONG50.value
-        elif name == 'short50':
-            return TRACK_COLS.SHORT50.value
-        elif name == 'dir30':
-            return TRACK_COLS.DIR30.value
-        elif name == 'long30':
-            return TRACK_COLS.LONG30.value
-        elif name == 'short30':
-            return TRACK_COLS.SHORT30.value
-        elif name == 'landfall':
-            return TRACK_COLS.LANDFALL.value
-        elif name == 'interpolated':
-            return TRACK_COLS.INTERPOLATED.value
-        elif name == 'filename':
-            return TRACK_COLS.FILENAME.value
-        elif name == 'mask_1':
-            return TRACK_COLS.MASK_1.value
-        elif name == 'mask_1_percent':
-            return TRACK_COLS.MASK_1_PERCENT.value
+        name_map = {
+            'year': TRACK_COLS.YEAR.value,
+            'month': TRACK_COLS.MONTH.value,
+            'day': TRACK_COLS.DAY.value,
+            'hour': TRACK_COLS.HOUR.value,
+            'grade': TRACK_COLS.GRADE.value,
+            'lat': TRACK_COLS.LAT.value,
+            'lng': TRACK_COLS.LNG.value,
+            'pressure': TRACK_COLS.PRESSURE.value,
+            'wind': TRACK_COLS.WIND.value,
+            'dir50': TRACK_COLS.DIR50.value,
+            'long50': TRACK_COLS.LONG50.value,
+            'short50': TRACK_COLS.SHORT50.value,
+            'dir30': TRACK_COLS.DIR30.value,
+            'long30': TRACK_COLS.LONG30.value,
+            'short30': TRACK_COLS.SHORT30.value,
+            'landfall': TRACK_COLS.LANDFALL.value,
+            'interpolated': TRACK_COLS.INTERPOLATED.value,
+            'filename': TRACK_COLS.FILENAME.value,
+            'mask_1': TRACK_COLS.MASK_1.value,
+            'mask_1_percent': TRACK_COLS.MASK_1_PERCENT.value,
+        }
+        if name in name_map:
+            return name_map[name]
         else:
             raise KeyError(f"{name} is not a valid column name.")
 
@@ -122,7 +108,7 @@ def _verbose_print(string: str, verbose: bool):
         print(string)
 
 
-def parse_image_filename(filename: str, separator='-') -> (str, datetime, str):
+def parse_image_filename(filename: str, separator='-') -> Tuple[str, datetime, str]:
     """
     Takes the filename of a Digital Typhoon image and parses it to return the date it was taken, the sequence ID
     it belongs to, and the satellite that took the image
@@ -131,31 +117,66 @@ def parse_image_filename(filename: str, separator='-') -> (str, datetime, str):
     :param separator: char, separator used in the filename
     :return: (str, datetime, str), Tuple containing the sequence ID, the datetime, and satellite string
     """
-    date, sequence_num, satellite, _ = filename.split(separator)
-    season = int(date[:4])
-    date_month = int(date[4:6])
-    date_day = int(date[6:8])
-    date_hour = int(date[8:10])
-    sequence_datetime = datetime(year=season, month=date_month,
-                                 day=date_day, hour=date_hour)
-    return sequence_num, sequence_datetime, satellite
+    try:
+        date, sequence_num, satellite, _ = filename.split(separator)
+        season = int(date[:4])
+        date_month = int(date[4:6])
+        date_day = int(date[6:8])
+        date_hour = int(date[8:10])
+        sequence_datetime = datetime(year=season, month=date_month,
+                                     day=date_day, hour=date_hour)
+        return sequence_num, sequence_datetime, satellite
+    except ValueError:
+        raise ValueError(
+            f"Filename {filename} does not match the expected format.")
+
+
+def parse_common_image_filename(filename: str, separator='-') -> Tuple[str, datetime, str]:
+    """
+    Takes the filename of a Digital Typhoon image and parses it to return the date it was taken, the sequence ID
+    it belongs to, and the satellite that took the image
+
+    :param filename: str, filename of the image
+    :param separator: char, separator used in the filename
+    :return: (str, datetime, str), Tuple containing the sequence ID, the datetime, and satellite string
+    """
+    try:
+        date, sequence_num, satellite = filename.split(separator)
+        season = int(date[:4])
+        date_month = int(date[4:6])
+        date_day = int(date[6:8])
+        date_hour = int(date[8:10])
+        sequence_datetime = datetime(year=season, month=date_month,
+                                     day=date_day, hour=date_hour)
+        return sequence_num, sequence_datetime, satellite
+    except ValueError:
+        raise ValueError(
+            f"Filename {filename} does not match the expected format.")
 
 
 def get_seq_str_from_track_filename(filename: str) -> str:
     """
-    Given a track filename, returns the sequence ID it belongs to
+    Given a track filename, returns the sequence ID it belongs to.
 
-    :param filename: str, the filename
-    :return: str, the sequence ID string
+    :param filename: str, the filename (e.g., "sequence1.csv")
+    :return: str, the sequence ID string (e.g., "sequence1")
+    :raises ValueError: If the filename does not end with '.csv'
     """
-    sequence_num = filename.removesuffix(".csv")
+    # Split the filename into root and extension
+    sequence_num, ext = os.path.splitext(filename)
+
+    # Validate the extension
+    if ext.lower() != '.csv':
+        raise ValueError(
+            f"Unexpected file extension: '{ext}'. Expected a '.csv' file.")
+
     return sequence_num
 
 
 def is_image_file(filename: str) -> bool:
     """
     Given a DigitalTyphoon file, returns if it is an h5 image.
-    
+
     :param filename: str, the filename
     :return: bool, True if it is an h5 image, False otherwise
     """

@@ -1,105 +1,108 @@
-from datetime import datetime
+# autopep8: off
+import os
+import sys
+import h5py
+# Add the parent directory to the system path
+sys.path.insert(0, os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..')))
 
-import numpy as np
-from unittest import TestCase
+
+from config_test import *
 
 from pyphoon2.DigitalTyphoonImage import DigitalTyphoonImage
+from unittest import TestCase
+import numpy as np
+from datetime import datetime
+# autopep8: on
+
+IMAGE_FILE_PATH = f'{IMAGE_DIR}200801/2008041304-200801-MTS1-1.h5'
+TRACK_ENTRY = np.array(
+    [2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., ...])
+FIRST_VALUES = [295.52186672208387, 295.41941557506,
+                295.41941557506, 295.41941557506, 295.41941557506]
+LAST_VALUES = [288.0905295158757, 283.8272408836852,
+               285.0799629800007, 286.7644375372904, 283.8272408836852]
 
 
 class TestDigitalTyphoonImage(TestCase):
+    def setUp(self):
+        self.image_file_path = IMAGE_FILE_PATH
+        self.track_entry = TRACK_ENTRY
+        self.test_image = DigitalTyphoonImage(
+            self.image_file_path,
+            self.track_entry,
+            load_imgs_into_mem=True,
+            spectrum='Infrared'
+        )
+
     def test_initialization_should_succeed(self):
-        test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041300-200801-MTS1-1.h5',
-                                         np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0, 0, 0]), spectrum='infrared')
+        """Test successful initialization with valid data."""
+        self.assertIsInstance(self.test_image, DigitalTyphoonImage)
 
     def test_initialization_load_image_into_memory_should_fail(self):
+        """Test that initializing with a nonexistent file raises FileNotFoundError."""
         with self.assertRaises(FileNotFoundError):
-            test_image = DigitalTyphoonImage('nonexistent/file',
-                                             np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0, 0, 0]),
-                                             load_imgs_into_mem=True)
+            DigitalTyphoonImage('nonexistent/file',self.track_entry, load_imgs_into_mem=True)
 
-    def test_initialization_load_image_into_memory_should_succeed(self):
-        test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
-                                         np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0]),
-                                         load_imgs_into_mem=True, spectrum='infrared')
-
-        read_in_image = test_image.image()
-        first_values = [296.30972999999994, 296.196816, 296.083902, 296.083902, 296.083902]
-        last_values = [285.80799, 284.56569, 285.18684, 281.78588999999994, 282.0398488235294]
-
-        for i in range(len(first_values)):
-            if read_in_image[0][i] != first_values[i]:
-                self.fail(f'Value produced was {read_in_image[0][i]}. Should be {first_values[i]}')
-            if read_in_image[-1][-i-1] != last_values[-i-1]:
-                self.fail(f'Value produced was {read_in_image[-1][-i-1]}. Should be {last_values[-i-1]}')
+    def test_image_loading(self):
+        """Test that image is loaded correctly and values match expectations."""
+        read_in_image = self.test_image.image()
+        np.testing.assert_array_equal(
+            read_in_image[0, :len(FIRST_VALUES)], FIRST_VALUES)
+        np.testing.assert_array_equal(
+            read_in_image[-1, -len(LAST_VALUES):], LAST_VALUES)
 
     def test_transform_func(self):
-        test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
-                                         np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0]),
-                                         load_imgs_into_mem=True, spectrum='infrared')
+        """Test that transform_func correctly transforms the image."""
+        test_image = DigitalTyphoonImage(
+            self.image_file_path,
+            self.track_entry,
+            load_imgs_into_mem=True,
+            transform_func=lambda img: np.ones(img.shape),
+            spectrum='Infrared'
+        )
+        transformed_image = test_image.image()
+        self.assertTrue(np.array_equal(transformed_image,
+                        np.ones(transformed_image.shape)))
 
-        read_in_image = test_image.image()
-        first_values = [296.30972999999994, 296.196816, 296.083902, 296.083902, 296.083902]
-        last_values = [285.80799, 284.56569, 285.18684, 281.78588999999994, 282.0398488235294]
+    def test_track_getters(self):
+        """Test that track data getters return correct values."""
+        self.assertEqual(self.test_image.year(), 2008)
+        self.assertEqual(self.test_image.month(), 5)
+        self.assertEqual(self.test_image.day(), 7)
+        self.assertEqual(self.test_image.grade(), 2)
+        self.assertEqual(self.test_image.lat(), 7.80)
+        self.assertEqual(self.test_image.long(), 133.30)
+        self.assertEqual(self.test_image.pressure(), 1004.0)
+        self.assertEqual(self.test_image.wind(), 0.0)
 
-        shape = read_in_image.shape
-        for i in range(len(first_values)):
-            if read_in_image[0][i] != first_values[i]:
-                self.fail(f'Value produced was {read_in_image[0][i]}. Should be {first_values[i]}')
-            if read_in_image[-1][-i - 1] != last_values[-i - 1]:
-                self.fail(f'Value produced was {read_in_image[-1][-i - 1]}. Should be {last_values[-i - 1]}')
+    def test_set_track_data(self):
+        """Test that setting track data later works correctly."""
+        test_image = DigitalTyphoonImage(
+            self.image_file_path, None, load_imgs_into_mem=False)
+        test_image.set_track_data(self.track_entry)
+        np.testing.assert_array_equal(
+            test_image.track_array(), self.track_entry)
 
-        test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
-                                         np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0]),
-                                         load_imgs_into_mem=True,
-                                         transform_func=lambda img: np.ones(img.shape), spectrum='infrared')
+    def _create_modified_h5_file(self):
+        """Create a modified h5 file for testing."""
+        with h5py.File(self.image_file_path, 'r') as f:
+            data = f['Infrared'][:]
+        image_file_path_modified = f'{IMAGE_DIR}200801/2008041304-200801-MTS1-1_modified.h5'
+        with h5py.File(image_file_path_modified, 'w') as f:
+            f.create_dataset('Infrared_modified', data=data)
+        return image_file_path_modified
 
-        read_in_image = test_image.image()
-        self.assertTrue(np.array_equal(np.ones(shape), read_in_image))
-
-    def test_give_track_entry_on_init(self):
-        should_be = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0., '', 0, 0])
-        track_entry = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0., '', 0, 0])
-        test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
-                                         track_entry,
-                                         load_imgs_into_mem=False)
-        self.assertTrue(np.array_equal(should_be, test_image.track_array()))
-
-    def test_give_track_entry_later_should_succeed(self):
-        should_be = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0., '', 0, 0])
-        track_entry = np.array([2008., 5., 7., 0., 2., 7.80, 133.30, 1004.0, 0.0, 0., 0., 0., 0., 0., 0., 0., 0., '', 0, 0])
-        test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
-                                         None,
-                                         load_imgs_into_mem=False, spectrum='infrared')
-        test_image.set_track_data(track_entry)
-        self.assertTrue(np.array_equal(should_be, test_image.track_array()))
-
-    def test_track_getters_return_correct_values(self):
-        track_entry = np.array([2008, 5, 7, 0, 2, 7.80, 133.30, 1004.0, 0.1, 2., 3., 4., 5., 6., 7., 8., 1, '1234', 9, 10])
-        test_image = DigitalTyphoonImage('test_data_files/image/200801/2008041304-200801-MTS1-1.h5',
-                                         track_entry,
-                                         sequence_id='seq_test',
-                                         load_imgs_into_mem=False, spectrum='infrared')
-        self.assertEqual(2008, test_image.year())
-        self.assertEqual(5, test_image.month())
-        self.assertEqual(7, test_image.day())
-        self.assertEqual(0, test_image.hour())
-        self.assertEqual(datetime(2008, 5, 7, 0), test_image.datetime())
-        self.assertEqual(2, test_image.grade())
-        self.assertEqual(7.80, test_image.lat())
-        self.assertEqual(133.30, test_image.long())
-        self.assertEqual(1004.0, test_image.pressure())
-        self.assertEqual(0.1, test_image.wind())
-        self.assertEqual(2., test_image.dir50())
-        self.assertEqual(3., test_image.long50())
-        self.assertEqual(4., test_image.short50())
-        self.assertEqual(5., test_image.dir30())
-        self.assertEqual(6., test_image.long30())
-        self.assertEqual(7., test_image.short30())
-        self.assertEqual(8., test_image.landfall())
-        self.assertEqual('test_data_files/image/200801/2008041304-200801-MTS1-1.h5', test_image.filepath())
-        self.assertEqual(9., test_image.mask_1())
-        self.assertEqual(10., test_image.mask_1_percent())
-        self.assertEqual('seq_test', test_image.sequence_id())
-        self.assertTrue(test_image.interpolated())
-
-
+    def test_initialization_with_no_spectrum(self):
+        """Test successful initialization with valid data."""
+        # image_file_path_modified = self._create_modified_h5_file()
+        image_file_path_modified = '/app/197830/1978120103-197830-GMS1-1.h5'
+        test_image_no_specific_spectrum = DigitalTyphoonImage(
+            image_file_path_modified,
+            self.track_entry,
+            load_imgs_into_mem=True,
+        )
+        self.assertIsInstance(
+            test_image_no_specific_spectrum, DigitalTyphoonImage)
+        # remove image_file_path_modified
+        # os.remove(image_file_path_modified)

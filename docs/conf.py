@@ -6,15 +6,16 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import os
+import sys
 project = 'pyphoon2'
-copyright = '2023, Jared Hwang'
-author = 'Jared Hwang'
-release = '1.0.0'
+copyright = '2023, Jared Hwang. 2024, Ngoc Anh Tong'
+author = 'Jared Hwang, Ngoc Anh Tong'
+release = '2.0.0'
 
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -25,8 +26,6 @@ html_static_path = ['_static']
 
 
 # Path setup
-import os 
-import sys
 sys.path.insert(0, os.path.abspath('../'))
 sys.path.insert(0, os.path.abspath('../pyphoon2'))
 
@@ -38,7 +37,7 @@ extensions = [
     'sphinx.ext.autodoc',  # Core library for html generation from docstrings
     'sphinx.ext.autosummary',  # Create neat summary tables
 ]
-autosummary_generate = True 
+autosummary_generate = True
 autodoc_member_order = 'bysource'
 
 autodoc_default_options = {

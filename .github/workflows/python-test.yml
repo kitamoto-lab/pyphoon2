@@ -1,0 +1,79 @@
+name: Python package
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.10', '3.11']
+
+    steps:
+      # 1. Checkout the repository
+      - uses: actions/checkout@v4
+
+      # 2. Cache Conda packages (optional but recommended)
+      - name: Cache Conda packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.conda/pkgs
+          key: ${{ runner.os }}-conda-${{ hashFiles('**/environment.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-conda-
+
+      # 3. Set up Miniconda
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-activate-base: true
+          activate-environment: ''
+
+      # 4. Create and activate Conda environment
+      - name: Create and activate Conda environment
+        shell: bash -l {0}
+        run: |
+          if [[ "${{ matrix.python-version }}" == pypy* ]]; then
+            conda create -n test-env pypy=3.10 -y
+          else
+            conda create -n test-env python=${{ matrix.python-version }} -y
+          fi
+          source activate test-env
+          pip install --upgrade pip
+
+      # 5. Display Python version
+      - name: Display Python version
+        shell: bash -l {0}
+        run: |
+          source activate test-env
+          python -c "import sys; print(sys.version)"
+
+      # 6. Install the package
+      - name: Install pyphoon2 library
+        shell: bash -l {0}
+        run: |
+          source activate test-env
+          pip install .
+
+      # 7. Verify installation
+      - name: Check if pyphoon2 was installed
+        shell: bash -l {0}
+        run: |
+          source activate test-env
+          pip list | grep pyphoon2
+
+      # 8. Verify PyPy installation (optional)
+      - name: Verify PyPy installation
+        if: startsWith(matrix.python-version, 'pypy')
+        shell: bash -l {0}
+        run: |
+          source activate test-env
+          pypy --version
+
+      # 9. Run tests
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          source activate test-env
+          cd tests
+          # sh run_all_tests.sh

@@ -24,7 +24,7 @@ The Code
 	from pathlib import Path
 	from torch.utils.data import DataLoader
 
-	from DigitalTyphoonDataloader.DigitalTyphoonDataset import DigitalTyphoonDataset
+	from pyphoon2.DigitalTyphoonDataset import DigitalTyphoonDataset import DigitalTyphoonDataset
 
 	def main(args):
 
